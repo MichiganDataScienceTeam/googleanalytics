@@ -4,7 +4,7 @@
 
 1. Clone this repo
 ```
-git clone git@github.com:MichiganDataScienceTeam/googleanalytics.git
+git clone https://github.com/MichiganDataScienceTeam/googleanalytics.git
 ```
 
 2. Download the data from [Google Drive](https://drive.google.com/open?id=1gkD5foFI9vMZzIL_jhDSxiE3T4mGgOqQ) and place it in `./data`
@@ -25,7 +25,7 @@ python train.py
 
 ## Contributing
 
-1. Create an account on Github
+1. Create an account on Github and [add an SSH key to your account](https://help.github.com/articles/adding-a-new-ssh-key-to-your-github-account/)
 2. Join the [MDST Organization](https://github.com/MichiganDataScienceTeam)
 3. Assign yourself to an [issue](https://github.com/MichiganDataScienceTeam/googleanalytics/issues)
 4. Create a branch and write your code
