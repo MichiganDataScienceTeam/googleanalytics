@@ -13,6 +13,7 @@ class Dataset():
 
     def __init__(self, debug=False):
         """Load the data from disk."""
+
         if(debug): nrows = 100
         else:      nrows = None
         type_change_columns = {"fullVisitorId": str,
