@@ -1,7 +1,6 @@
 import os.path
 import pandas as pd
 import json
-from pandas.io.json import json_normalize
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
@@ -12,7 +11,14 @@ class Dataset():
     """The Google Analytics dataset."""
 
     def __init__(self, debug=False):
-        """Load the data from disk."""
+        """Load the data from disk.
+
+        Args: 
+            debug (bool): An option to choose whether to load all data. 
+                          If 'debug' is true, program will only read 100 rows data from the csv file.
+        
+        """
+
 
         if(debug): nrows = 100
         else:      nrows = None
@@ -30,14 +36,14 @@ class Dataset():
                                 dtype=type_change_columns,
                                 nrows = nrows)
         for column in json_columns:
-            train_column_as_df = json_normalize(self.train[column])
-            test_column_as_df = json_normalize(self.test[column])
-            self.train = self.train.drop(column, axis=1).merge(train_column_as_df, 
-                                                               right_index=True, 
-                                                               left_index=True)                   
-            self.test = self.test.drop(column, axis=1).merge(test_column_as_df, 
-                                                               right_index=True, 
-                                                               left_index=True)
+            train_column_as_df = pd.io.json.json_normalize(self.train[column])
+            test_column_as_df = pd.io.json.json_normalize(self.test[column])
+            self.train = self.train.merge(train_column_as_df, 
+                                        right_index=True, 
+                                        left_index=True)                   
+            self.test = self.test.merge(test_column_as_df, 
+                                        right_index=True, 
+                                        left_index=True)
 
 if __name__ == '__main__':
 
