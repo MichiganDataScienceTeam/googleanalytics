@@ -11,9 +11,11 @@ class Dataset():
 
     def __init__(self):
         """Load the data from disk."""
-
-        self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN))
-        self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST))
+        type_change = {"fullVisitorId": str,
+                        "sessionId": str,
+                        "visitId": str}
+        self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN), dtype=type_change)
+        self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST), dtype=type_change)
 
 
 if __name__ == '__main__':
