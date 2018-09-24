@@ -16,7 +16,10 @@ class Dataset():
         Args:
             debug (bool): An option to choose whether to load all
               data.  If 'debug' is true, program will only read 100 rows
-              data from the csv file.
+              data from the csv file. 
+              However, one thing to pay attention is that if you load less data,
+              the shape of DF is wrong, because some columns daon't have any
+              data until you read many many rows.
         """
 
         if(debug):
