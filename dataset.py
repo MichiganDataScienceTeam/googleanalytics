@@ -1,6 +1,7 @@
 import os.path
 import pandas as pd
 import json
+import explore_utils
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
@@ -57,12 +58,15 @@ class Dataset():
 if __name__ == '__main__':
 
     # Make sure we can load the dataset
-    dataset = Dataset(debug=True)
+    dataset = Dataset()
 
     # Sanity check, make sure we have the right number of rows
     num_train = len(dataset.train)
     num_test = len(dataset.test)
-    assert num_train == 100, 'Incorrect number of training examples.'  # 903653
-    assert num_test == 100, 'Incorrect number of test examples.'  # 804684
+    assert num_train == 903653, 'Incorrect number of training examples.'  # 903653
+    assert num_test == 804684, 'Incorrect number of test examples.'  # 804684
+
+    print("The most visit times for a customer in train set is: ", 
+            explore_utils.find_most_visit(dataset))
 
     print('Successfully loaded the dataset.')
