@@ -65,8 +65,5 @@ if __name__ == '__main__':
     num_test = len(dataset.test)
     assert num_train == 903653, 'Incorrect number of training examples.'  # 903653
     assert num_test == 804684, 'Incorrect number of test examples.'  # 804684
-
-    print("The most visit times for a customer in train set is: ", 
-            explore_utils.find_most_visit(dataset))
-
+    
     print('Successfully loaded the dataset.')

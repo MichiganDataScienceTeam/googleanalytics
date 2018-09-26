@@ -10,7 +10,6 @@ def find_most_visit(dataset):
 
 	train_df = dataset.train.copy()
 
-    train_df['transactionRevenue'] = train_df['transactionRevenue'].astype(float)
     train_gdf = train_df.groupby("fullVisitorId")['visitNumber'].sum().reset_index()
     max_visit = train_gdf['visitNumber'].max()
 	
