@@ -1,4 +1,5 @@
 import dataset
+import explore_utils
 
 
 def main():
@@ -11,8 +12,8 @@ def main():
     print("Test set")
     print(data.test.describe())
 
-    print("The most visit times for a customer in train set is: ", 
-            explore_utils.find_most_visit(dataset))
+    print("The most visit times for a customer in train set is: ",
+          explore_utils.find_most_visit(dataset))
 
 
 if __name__ == '__main__':

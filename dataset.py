@@ -1,7 +1,6 @@
 import os.path
 import pandas as pd
 import json
-import explore_utils
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
@@ -17,10 +16,12 @@ class Dataset():
         Args:
             debug (bool): An option to choose whether to load all
               data.  If 'debug' is true, program will only read 100 rows
-              data from the csv file. 
-              However, one thing to pay attention is that if you load less data,
-              the shape of DF is wrong, because some columns daon't have any
-              data until you read many many rows.
+              data from the csv file.
+              However, one thing to pay attention is that if you load
+              less data, the shape of DF is wrong, because some
+              columns daon't have any data until you read many many
+              rows.
+
         """
 
         if(debug):
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     # Sanity check, make sure we have the right number of rows
     num_train = len(dataset.train)
     num_test = len(dataset.test)
-    assert num_train == 903653, 'Incorrect number of training examples.'  # 903653
-    assert num_test == 804684, 'Incorrect number of test examples.'  # 804684
-    
+    assert num_train == 903653, 'Incorrect number of training examples.'
+    assert num_test == 804684, 'Incorrect number of test examples.'
+
     print('Successfully loaded the dataset.')
