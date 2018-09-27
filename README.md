@@ -26,8 +26,9 @@ python dataset.py --debug
 5. Run the exploration code. Note: removing the `--debug` flag will
 cause the full dataset to be loaded, which may take a long time on
 your machine.
-
-``` python explore.py --debug ```
+```
+python explore.py --debug
+```
 
 
 ## Contributing
