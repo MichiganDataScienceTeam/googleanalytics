@@ -9,12 +9,13 @@ git clone https://github.com/MichiganDataScienceTeam/googleanalytics.git
 
 2. Download the data from [Google Drive](https://drive.google.com/open?id=1gkD5foFI9vMZzIL_jhDSxiE3T4mGgOqQ) and place it in `./data`
 
-3. Unzip the data
+3. Unzip the data and make sure they have read permissions
 ```
 cd data
 unzip train.csv.zip
 unzip test.csv.zip
 unzip sample_submission.csv.zip
+chmod +r train.csv test.csv sample_submission.csv.zip
 cd ..
 ```
 
