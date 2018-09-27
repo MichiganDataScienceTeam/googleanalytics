@@ -14,6 +14,7 @@ _NUM_ROWS_TEST = 804684
 
 _NUM_ROWS_DEBUG = 1000
 
+
 class Dataset():
     """The Google Analytics dataset."""
 
@@ -39,19 +40,19 @@ class Dataset():
                                "sessionId": str,
                                "visitId": str}
         json_columns = ['device', 'geoNetwork', 'totals', 'trafficSource']
+
+        converters = {column: self.make_json_converter(column)
+                      for column in json_columns}
+
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
-                                 converters={
-                                     column: json.loads
-                                     for column in json_columns},
+                                 converters=converters,
                                  dtype=type_change_columns,
                                  nrows=nrows)
-
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
-                                converters={
-                                    column: json.loads
-                                    for column in json_columns},
+                                converters=converters,
                                 dtype=type_change_columns,
                                 nrows=nrows)
+
         for column in json_columns:
             train_column_as_df = pd.io.json.json_normalize(self.train[column])
             test_column_as_df = pd.io.json.json_normalize(self.test[column])
@@ -61,6 +62,9 @@ class Dataset():
             self.test = self.test.merge(test_column_as_df,
                                         right_index=True,
                                         left_index=True)
+
+    def make_json_converter(self, column_name):
+        return lambda x: {column_name: json.loads(x)}
 
 
 if __name__ == '__main__':
