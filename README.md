@@ -18,15 +18,22 @@ unzip sample_submission.csv.zip
 cd ..
 ```
 
-4. Run the code
+4. Check to make sure the dataset is in the correct place
 ```
-python train.py
+python dataset.py --debug
 ```
+
+5. Run the exploration code. Note: removing the `--debug` flag will
+cause the full dataset to be loaded, which may take a long time on
+your machine.
+
+``` python explore.py --debug ```
+
 
 ## Contributing
 
 1. Create an account on Github and [add an SSH key to your account](https://help.github.com/articles/adding-a-new-ssh-key-to-your-github-account/)
-2. Join the [MDST Organization](https://github.com/MichiganDataScienceTeam)
+2. Ask @stroud on slack to join the [MDST Organization](https://github.com/MichiganDataScienceTeam)
 3. Assign yourself to an [issue](https://github.com/MichiganDataScienceTeam/googleanalytics/issues)
 4. Create a branch and write your code
-5. Submit a pull request
+5. Submit a pull request when you are done!

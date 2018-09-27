@@ -1,11 +1,18 @@
+from __future__ import print_function
+
 import os.path
 import pandas as pd
 import json
+import argparse
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
 _TEST = 'test.csv'
 
+_NUM_ROWS_TRAIN = 903653
+_NUM_ROWS_TEST = 804684
+
+_NUM_ROWS_DEBUG = 1000
 
 class Dataset():
     """The Google Analytics dataset."""
@@ -25,7 +32,7 @@ class Dataset():
         """
 
         if(debug):
-            nrows = 100
+            nrows = _NUM_ROWS_DEBUG
         else:
             nrows = None
         type_change_columns = {"fullVisitorId": str,
@@ -57,14 +64,23 @@ class Dataset():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Train a model on the Google Analytics Dataset.')
+    parser.add_argument('--debug', dest='debug', action='store_true',
+                        help='run in debug mode')
+    args = parser.parse_args()
 
     # Make sure we can load the dataset
-    dataset = Dataset()
+    dataset = Dataset(debug=args.debug)
 
     # Sanity check, make sure we have the right number of rows
     num_train = len(dataset.train)
     num_test = len(dataset.test)
-    assert num_train == 903653, 'Incorrect number of training examples.'
-    assert num_test == 804684, 'Incorrect number of test examples.'
+    if args.debug:
+        assert num_train == _NUM_ROWS_DEBUG
+        assert num_test == _NUM_ROWS_DEBUG
+    else:
+        assert num_train == _NUM_ROWS_TRAIN, 'Incorrect number of training examples found.'
+        assert num_test == _NUM_ROWS_TEST, 'Incorrect number of test examples found.'
 
     print('Successfully loaded the dataset.')
