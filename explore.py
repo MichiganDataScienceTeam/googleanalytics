@@ -30,6 +30,16 @@ def main(args):
     for p, pv in zip(percentiles, percentile_values):
         print("%2.2f%% of customers spend less than: $%.2f" % (p, pv))
 
+    # channelGroupings and customer revenue (#31)
+    counts, means = explore_utils.find_channel_grouping_revenue(data)
+    print('Channel Grouping Counts:')
+    for key in sorted(counts, key=counts.get, reverse=True):
+        print('\t{}: {}'.format(key, counts[key]))
+
+    print('Mean Total Revenue by Channel Grouping')
+    for key in sorted(means, key=means.get, reverse=True):
+        print('\t{}: ${:.2f}'.format(key, means[key]))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
