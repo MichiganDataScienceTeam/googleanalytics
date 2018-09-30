@@ -44,3 +44,15 @@ def find_customer_revenue_percentiles(
               for percentile in percentiles]
 
     return values
+
+def find_most_common_traffic_sources(dataset):
+    """Find .
+
+    args:
+       dataset (Dataset): the google analytics dataset
+
+    returns:
+       Series of 5 most common traffic sources.
+
+    """
+    return dataset.train['trafficSource.source'].value_counts().head()
