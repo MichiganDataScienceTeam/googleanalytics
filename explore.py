@@ -37,6 +37,9 @@ def main(args):
     for source in most_common_sources.index:
         print(' {}: {}'.format(source,most_common_sources[source]))
 
+    # Unique Visitor Percentage
+    print("%2.2f%% of all visitors to the site visit exactly once." % explore_utils.find_one_visit_percent(data))
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Explore the Google Analytics dataset.')

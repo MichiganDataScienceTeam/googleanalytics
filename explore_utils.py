@@ -56,3 +56,31 @@ def find_most_common_traffic_sources(dataset,num=5):
 
     """
     return dataset.train['trafficSource.source'].value_counts().head(num)
+
+
+def find_one_visit_percent(dataset):
+    """Finds the percent of visitors to the store that only visit once
+
+    args:
+        dataset (Dataset): the google analystics dataset
+    
+    returns:
+        The percent of total customers that have only visited once, based on their ID
+    
+    """
+    data = dataset.train.copy()
+    
+    #gets DataFrame of each visitor's total number of visits
+    total_visits = data.groupby("fullVisitorId")['visitNumber'].sum()
+    
+    #counts all instances where the total visit number is exactly 1
+    one_visit_count = 0
+    for visitor in total_visits:
+        if visitor == 1:
+            one_visit_count += 1   
+    
+    #divides by the total number of data points inspected
+    percent_one_time_visitors = (100.*(one_visit_count))/(total_visits.size)
+
+    #returns this percent
+    return percent_one_time_visitors
