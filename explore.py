@@ -30,6 +30,12 @@ def main(args):
     for p, pv in zip(percentiles, percentile_values):
         print("%2.2f%% of customers spend less than: $%.2f" % (p, pv))
 
+    # Most common Sources of Traffic and counts
+    num_of_sources = 6
+    most_common_sources = explore_utils.find_most_common_traffic_sources(data,num_of_sources)
+    print("\nThe {} most common sources of traffic are :".format(num_of_sources))
+    for source in most_common_sources.index:
+        print(' {}: {}'.format(source,most_common_sources[source]))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
