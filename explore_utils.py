@@ -49,7 +49,12 @@ def find_customer_revenue_percentiles(
 
 def find_channel_grouping_revenue(dataset):
     """
-    TODO: documentation
+    args:
+       dataset (Dataset): the google analytics dataset
+
+    returns:
+       Tuple (dict, dict) containing mapping from channelGrouping name to count
+       and mapping from channelGrouping name to average revenue in dollars.
     """
 
     train_df = dataset.train
