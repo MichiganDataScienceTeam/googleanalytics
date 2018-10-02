@@ -74,11 +74,8 @@ def find_one_visit_percent(dataset):
     total_visits = data.groupby("fullVisitorId")['visitNumber'].sum()
     
     #counts all instances where the total visit number is exactly 1
-    one_visit_count = 0
-    for visitor in total_visits:
-        if visitor == 1:
-            one_visit_count += 1   
-    
+    one_visit_count = np.sum(total_visits == 1)
+
     #divides by the total number of data points inspected
     percent_one_time_visitors = (100.*(one_visit_count))/(total_visits.size)
 
