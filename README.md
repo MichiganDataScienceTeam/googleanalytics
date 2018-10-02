@@ -4,6 +4,12 @@
 
 1. Clone this repo
 ```
+git clone git@github.com:MichiganDataScienceTeam/googleanalytics.git
+```
+
+If you don't have an SSH key set up on Github, the above will not work.
+As a temporary solution, use the command below.
+```
 git clone https://github.com/MichiganDataScienceTeam/googleanalytics.git
 ```
 
