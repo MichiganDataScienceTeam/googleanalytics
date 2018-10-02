@@ -18,24 +18,37 @@ _NUM_ROWS_DEBUG = 1000
 class Dataset():
     """The Google Analytics dataset."""
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, skip_rows=False):
         """Load the data from disk.
 
         Args:
             debug (bool): An option to choose whether to load all
-              data.  If 'debug' is true, program will only read 100 rows
+              data.  If 'debug' is true, program will only read 1000 rows
               data from the csv file.
               However, one thing to pay attention is that if you load
               less data, the shape of DF is wrong, because some
               columns daon't have any data until you read many many
               rows.
+            skip_rows (bool): An option to load an evenly distributed
+              sample of the dataset. If 'debug' is true, _approximately_
+              1000 rows will be read from the csv file, but taken every
+              _NUM_SKIP_ROWS_TRAIN and _NUM_SKIP_ROWS_TEST rows instead
+              of just the first 1000 rows.
+              NOTE: Automatically False if debug = False
 
         """
-
-        if(debug):
+        skip_rows = False if not debug else skip_rows
+        rows_to_skip_train = 1
+        rows_to_skip_test = 1
+        
+        if debug and not skip_rows:
             nrows = _NUM_ROWS_DEBUG
         else:
             nrows = None
+        if skip_rows:
+            rows_to_skip_train = _NUM_ROWS_TRAIN // _NUM_ROWS_DEBUG
+            rows_to_skip_test = _NUM_ROWS_TEST // _NUM_ROWS_DEBUG
+            
         type_change_columns = {"fullVisitorId": str,
                                "sessionId": str,
                                "visitId": str}
@@ -47,11 +60,11 @@ class Dataset():
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
                                  converters=converters,
                                  dtype=type_change_columns,
-                                 nrows=nrows)
+                                 nrows=nrows, skiprows=lambda i: i % rows_to_skip_train !=0)
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
-                                nrows=nrows)
+                                nrows=nrows, skiprows=lambda i: i % rows_to_skip_test !=0)
 
         for column in json_columns:
             train_column_as_df = pd.io.json.json_normalize(self.train[column])
