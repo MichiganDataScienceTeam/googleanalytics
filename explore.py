@@ -48,6 +48,9 @@ def main(args):
         print('\t{}: ${:.2f}'.format(key, means[key]))
 
 
+    # Unique Visitor Percentage
+    print("%2.2f%% of all visitors to the site visit exactly once." % explore_utils.find_one_visit_percent(data))
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Explore the Google Analytics dataset.')
