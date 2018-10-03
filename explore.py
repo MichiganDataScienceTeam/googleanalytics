@@ -21,6 +21,11 @@ def main(args):
     print("The most visit times for a customer in train set is: ",
           explore_utils.find_most_visit(data))
 
+    #   Mean number of visits for socially engaged customers
+
+    print("The mean visit times for socially engaged customers is: ",
+          explore_utils.social_active_customers_revenue(data))
+
     # Customer spending percentiles
 
     percentiles = [95, 97.5, 99, 99.9, 99.99]
