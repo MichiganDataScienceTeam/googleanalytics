@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 
 
@@ -45,7 +46,8 @@ def find_customer_revenue_percentiles(
 
     return values
 
-def find_most_common_traffic_sources(dataset,num=5):
+
+def find_most_common_traffic_sources(dataset, num=5):
     """ Find n most common traffic sources
 
     args:
@@ -56,7 +58,6 @@ def find_most_common_traffic_sources(dataset,num=5):
 
     """
     return dataset.train['trafficSource.source'].value_counts().head(num)
-
 
 def find_one_visit_percent(dataset):
     """Finds the percent of visitors to the store that only visit once
@@ -82,3 +83,21 @@ def find_one_visit_percent(dataset):
     #returns this percent
     return percent_one_time_visitors
     
+def find_channel_grouping_revenue(dataset):
+    """
+    args:
+       dataset (Dataset): the google analytics dataset
+
+    returns:
+       Tuple (dict, dict) containing mapping from channelGrouping name to count
+       and mapping from channelGrouping name to average revenue in dollars.
+    """
+
+    train_df = dataset.train
+    df = pd.DataFrame(train_df, columns=['channelGrouping', 'totals.transactionRevenue', 'fullVisitorId'])
+    df['totals.transactionRevenue'] = df['totals.transactionRevenue'].fillna(0)
+    groupings = df['channelGrouping'].unique()
+    counts = {grouping: df[df['channelGrouping'] == grouping].shape[0] for grouping in groupings}
+    means = {grouping: np.mean(df[df['channelGrouping'] == grouping]['totals.transactionRevenue'].astype('int64')) / 10000 for grouping in groupings}
+
+    return counts, means

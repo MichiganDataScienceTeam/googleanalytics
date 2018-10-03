@@ -32,10 +32,21 @@ def main(args):
 
     # Most common Sources of Traffic and counts
     num_of_sources = 6
-    most_common_sources = explore_utils.find_most_common_traffic_sources(data,num_of_sources)
+    most_common_sources = explore_utils.find_most_common_traffic_sources(data, num_of_sources)
     print("\nThe {} most common sources of traffic are :".format(num_of_sources))
     for source in most_common_sources.index:
-        print(' {}: {}'.format(source,most_common_sources[source]))
+        print(' {}: {}'.format(source, most_common_sources[source]))
+
+    # channelGroupings and customer revenue (#31)
+    counts, means = explore_utils.find_channel_grouping_revenue(data)
+    print('Channel Grouping Counts:')
+    for key in sorted(counts, key=counts.get, reverse=True):
+        print('\t{}: {}'.format(key, counts[key]))
+
+    print('Mean Total Revenue by Channel Grouping')
+    for key in sorted(means, key=means.get, reverse=True):
+        print('\t{}: ${:.2f}'.format(key, means[key]))
+
 
     # Unique Visitor Percentage
     print("%2.2f%% of all visitors to the site visit exactly once." % explore_utils.find_one_visit_percent(data))
