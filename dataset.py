@@ -34,10 +34,10 @@ class Dataset():
               1000 rows will be read from the csv file, but taken every
               _NUM_SKIP_ROWS_TRAIN and _NUM_SKIP_ROWS_TEST rows instead
               of just the first 1000 rows.
-              NOTE: Automatically False if debug = False
 
         """
-        skip_rows = False if not debug else skip_rows
+        if skip_rows and not debug:
+            raise ValueError('debug mode must be on to skip rows')
         rows_to_skip_train = 1
         rows_to_skip_test = 1
         
@@ -60,11 +60,13 @@ class Dataset():
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
                                  converters=converters,
                                  dtype=type_change_columns,
-                                 nrows=nrows, skiprows=lambda i: i % rows_to_skip_train !=0)
+                                 nrows=nrows, 
+                                 skiprows=lambda i: i % rows_to_skip_train !=0)
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
-                                nrows=nrows, skiprows=lambda i: i % rows_to_skip_test !=0)
+                                nrows=nrows, 
+                                skiprows=lambda i: i % rows_to_skip_test !=0)
 
         for column in json_columns:
             train_column_as_df = pd.io.json.json_normalize(self.train[column])
