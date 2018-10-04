@@ -113,7 +113,7 @@ def find_transaction_by_region(data):
 
     """
     train_df = data.train
-    data = train_df.copy()
+    data = train_df.copy(deep=False)
     data['rev'] = data['totals.transactionRevenue'].fillna(0).astype(float)
     avg = data.groupby('geoNetwork.region')['rev'].mean()
     avg = pd.DataFrame(avg)
