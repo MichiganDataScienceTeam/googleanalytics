@@ -1,7 +1,7 @@
 import numpy as np
 
 def revenue_per_trafficsource(dataset):
-    """Find the average transavtion revenue by traffic Source
+    """Find the average transaction revenue by traffic Source
 
     args :
          dataset (Dataset): the google analytics Dataset
@@ -9,7 +9,7 @@ def revenue_per_trafficsource(dataset):
     returns:
          Dataframe of average transaction revenue by traffic Source
     """
-    train_df = dataset.train
+    train_df = dataset.train.copy()
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float)
     train_df['source'] = train_df['trafficSource.source']
     train_df = train_df[['revenue','source']]

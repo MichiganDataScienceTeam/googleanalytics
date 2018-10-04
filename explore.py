@@ -30,6 +30,7 @@ def main(args):
     for p, pv in zip(percentiles, percentile_values):
         print("%2.2f%% of customers spend less than: $%.2f" % (p, pv))
      
+
     # Total average revenue per trafficSource 
     print("The revenue per trafficSource is: ")
     print(explore_utils.revenue_per_trafficsource(data))
