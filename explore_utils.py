@@ -36,7 +36,7 @@ def find_customer_revenue_percentiles(
 
     """
 
-    train_df = dataset.train
+    train_df = dataset.train.copy(deep=False)
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float)
     revenue_per_customer = train_df.groupby('fullVisitorId')['revenue']
     total_revenue_per_customer = revenue_per_customer.sum().fillna(0) / 10000.0
