@@ -14,7 +14,7 @@ def revenue_per_trafficsource(dataset):
     train_df['source'] = train_df['trafficSource.source']
     train_df = train_df[['revenue','source']]
     train_df = train_df.fillna(0)
-    result = train_df.groupby('source')['revenue'].mean()
+    result = train_df.groupby('source')['revenue'].mean()/1000
     return result
 
 
