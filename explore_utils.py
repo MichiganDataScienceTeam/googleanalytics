@@ -101,3 +101,22 @@ def find_channel_grouping_revenue(dataset):
     means = {grouping: np.mean(df[df['channelGrouping'] == grouping]['totals.transactionRevenue'].astype('int64')) / 10000 for grouping in groupings}
 
     return counts, means
+
+def find_country_revenue(dataset):
+    """Finds the mean total revenue by different countries
+    args:
+        dataset (Dataset): the google analystics dataset
+    
+    returns:
+       Tuple (dict, dict) containing mapping from geoNetwork.country to count
+       and mapping from geoNetwork.country to average revenue in dollars.
+    """
+    train_df = dataset.train
+    df = pd.DataFrame(train_df, columns=['geoNetwork.country', 'totals.transactionRevenue', 'fullVisitorId'])
+    df['totals.transactionRevenue'] = df['totals.transactionRevenue'].fillna(0)
+    groupings = df['geoNetwork.country'].unique()
+    counts = {grouping: df[df['geoNetwork.country'] == grouping].shape[0] for grouping in groupings}
+    means = {grouping: np.mean(df[df['geoNetwork.country'] == grouping]['totals.transactionRevenue'].astype('int64')) / 10000 for grouping in groupings}
+
+    return counts, means
+

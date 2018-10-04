@@ -46,6 +46,16 @@ def main(args):
     print('Mean Total Revenue by Channel Grouping')
     for key in sorted(means, key=means.get, reverse=True):
         print('\t{}: ${:.2f}'.format(key, means[key]))
+        
+    # geoNetwork.country and customer revenue (#31)
+    counts, means = explore_utils.find_country_revenue(data)
+    print('Country Counts:')
+    for key in sorted(counts, key=counts.get, reverse=True):
+        print('\t{}: {}'.format(key, counts[key]))
+
+    print('Mean Total Revenue by Country')
+    for key in sorted(means, key=means.get, reverse=True):
+        print('\t{}: ${:.2f}'.format(key, means[key]))
 
 
     # Unique Visitor Percentage
