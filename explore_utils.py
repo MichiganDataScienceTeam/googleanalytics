@@ -113,9 +113,10 @@ def find_transaction_by_region(data):
 
     """
     train_df = data.train
-    train_df['rev'] = train_df['totals.transactionRevenue'].fillna(0).astype(float)
-    idx = train_df.groupby('geoNetwork.region')['rev'].mean()
-    idx = pd.DataFrame(idx)
-    a = idx[idx['rev']>0]
-    a.columns = ['Transaction']
-    return a.sort_values(by=['Transaction'])
+    data = train_df.copy()
+    data['rev'] = data['totals.transactionRevenue'].fillna(0).astype(float)
+    avg = data.groupby('geoNetwork.region')['rev'].mean()
+    avg = pd.DataFrame(avg)
+    new_df = avg[avg['rev']>0]
+    new_df.columns = ['Transaction']
+    return new_df.sort_values(by=['Transaction'])
