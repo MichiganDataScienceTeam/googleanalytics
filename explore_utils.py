@@ -56,3 +56,19 @@ def find_most_common_traffic_sources(dataset,num=5):
 
     """
     return dataset.train['trafficSource.source'].value_counts().head(num)
+
+def find_device_revenue_relationship(dataset):
+    """ Find the relationship between device browser and customer revenue
+
+    args:
+        dataset (Dataset): the google analytics dataset
+    returns:
+        the name of each browser, and the average of revenue by each browser
+    """
+    train_df = dataset.train
+    train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float).fillna(0)
+    grouped_customer = train_df.groupby('device.browser')['revenue'].mean()/10000
+    grouped_browser = train_df.groupby('device.browser')['device.browser'].unique()
+    grouped_browser = [j[0] for j in grouped_browser]
+    values = [i for i in grouped_customer]
+    return grouped_browser, values

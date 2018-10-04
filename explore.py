@@ -37,6 +37,9 @@ def main(args):
     for source in most_common_sources.index:
         print(' {}: {}'.format(source,most_common_sources[source]))
 
+    diff_browser, average_for_device = explore_utils.find_device_revenue_relationship(data)
+    for i,j in zip(diff_browser, average_for_device):
+        print("The average revenue for %s is %.2f" %(i,j))
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Explore the Google Analytics dataset.')
