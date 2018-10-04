@@ -95,11 +95,9 @@ def find_channel_grouping_revenue(dataset):
 
     train_df = dataset.train
     df = pd.DataFrame(train_df, columns=['channelGrouping', 'totals.transactionRevenue', 'fullVisitorId'])
-    df['totals.transactionRevenue'] = df['totals.transactionRevenue'].fillna(0)
-    groupings = df['channelGrouping'].unique()
-    counts = {grouping: df[df['channelGrouping'] == grouping].shape[0] for grouping in groupings}
-    means = {grouping: np.mean(df[df['channelGrouping'] == grouping]['totals.transactionRevenue'].astype('int64')) / 10000 for grouping in groupings}
-
+    df['totals.transactionRevenue'] = df['totals.transactionRevenue'].fillna(0).astype('int64')
+    counts = df.groupby('fullVisitorId').first().groupby('channelGrouping').count()
+    means = df.groupby('fullVisitorId').first().groupby('channelGrouping')['totals.transactionRevenue'].mean() / 10000
     return counts, means
 
 def find_transaction_by_region(data):
