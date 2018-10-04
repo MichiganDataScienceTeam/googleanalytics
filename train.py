@@ -1,10 +1,18 @@
 import argparse
+import dataset
 
 
 def main(args):
 
-    # Training code goes here
-    pass
+    print('Loading dataset...')
+    data = dataset.Dataset(debug=args.debug)
+
+    print('Preprocessing...')
+    train_df = data.preprocess()
+
+    print('Number of rows:', len(train_df))
+    print('Number of columns:', len(train_df.columns))
+    print(train_df.describe())
 
 
 if __name__ == '__main__':
