@@ -101,3 +101,14 @@ def find_channel_grouping_revenue(dataset):
     means = {grouping: np.mean(df[df['channelGrouping'] == grouping]['totals.transactionRevenue'].astype('int64')) / 10000 for grouping in groupings}
 
     return counts, means
+
+def find_percentage_single_transaction(dataset):
+
+    train_df2 = dataset.train
+    train_df2.set_index('fullVisitorId', inplace=True)
+    continents = train_df2['geoNetwork.continent'].unique()
+    for con in continents:
+        number_of_people = train_df2[train_df2['geoNetwork.continent'] == con]['visitNumber'].count()
+        train_df3 = train_df2[train_df2['geoNetwork.continent'] == con]['visitNumber']
+        number_of_single_visits = train_df3[train_df3 == 1].count()
+        print('Percentage of people visited for once in '+ con + ': '+(str)((number_of_single_visits/number_of_people)*100))
