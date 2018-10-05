@@ -44,3 +44,15 @@ def find_customer_revenue_percentiles(
               for percentile in percentiles]
 
     return values
+
+def explore_geonetwork(dataset):
+    train_df = dataset.train
+    geoNetwork = train_df.geoNetwork.values
+    continents = [item['geoNetwork']['continent'] for item in geoNetwork]
+    values, counts = np.unique(continents, return_counts=True)
+    values[0] = 'Unknown'
+    print('Continents represented:')
+    print(np.asarray((values, counts)).T)
+
+
+

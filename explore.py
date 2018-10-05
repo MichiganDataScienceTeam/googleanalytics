@@ -29,7 +29,8 @@ def main(args):
         percentiles)
     for p, pv in zip(percentiles, percentile_values):
         print("%2.2f%% of customers spend less than: $%.2f" % (p, pv))
-
+    # MY CODE
+    explore_utils.explore_geonetwork(data)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
