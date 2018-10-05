@@ -56,6 +56,13 @@ def main(args):
     # Unique Visitor Percentage
     print("%2.2f%% of all visitors to the site visit exactly once." % explore_utils.find_one_visit_percent(data))
 
+
+    # Statistics of sales made by first time visitors vs returning visitors
+    first_and_return_visits = explore_utils.find_return_visit_stats(data)
+    print("\nStatistics of total transactions for unique visitors: \n{}\n"
+        .format(first_and_return_visits))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Explore the Google Analytics dataset.')
