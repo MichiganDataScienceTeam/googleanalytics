@@ -28,7 +28,7 @@ class Dataset():
               data from the csv file.
               However, one thing to pay attention is that if you load
               less data, the shape of DF is wrong, because some
-              columns daon't have any data until you read many many
+              columns don't have any data until you read many many
               rows.
 
         """
@@ -41,6 +41,7 @@ class Dataset():
                                "sessionId": str,
                                "visitId": str}
         json_columns = ['device', 'geoNetwork', 'totals', 'trafficSource']
+        date_columns = ['date', 'visitStartTime']
 
         converters = {column: self._make_json_converter(column)
                       for column in json_columns}
@@ -48,10 +49,12 @@ class Dataset():
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
                                  converters=converters,
                                  dtype=type_change_columns,
+                                 parse_dates=date_columns,
                                  nrows=nrows)
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
+                                parse_dates=date_columns,
                                 nrows=nrows)
 
         for column in json_columns:
