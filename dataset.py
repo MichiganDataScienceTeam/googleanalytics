@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import os.path
 import pandas as pd
+import numpy as np
 import json
 import argparse
 
@@ -41,7 +42,7 @@ class Dataset():
                                "visitId": str}
         json_columns = ['device', 'geoNetwork', 'totals', 'trafficSource']
 
-        converters = {column: self.make_json_converter(column)
+        converters = {column: self._make_json_converter(column)
                       for column in json_columns}
 
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
@@ -63,9 +64,58 @@ class Dataset():
                                         right_index=True,
                                         left_index=True)
 
-    def make_json_converter(self, column_name):
+    def preprocess(self, do_val_split=False):
+        """Preprocess the dataset.
+
+        Args:
+           do_val_split (bool): Whether to do a validation split. Not
+              yet implemented.
+
+        Returns:
+           A preprocessed version of the training set with only
+           numerical data for ML models.
+        """
+
+        if do_val_split:
+            raise NotImplementedError(
+                'Validation split not yet implemented.')
+
+        df = pd.DataFrame({'visitorId': self.train['fullVisitorId'].unique()})
+        df.set_index('visitorId', inplace=True)
+
+        # Preprocessing operations go here.
+        df['log_sum_revenue'] = self._make_log_sum_revenue()
+        
+        return df
+
+    def _make_log_sum_revenue(self):
+        """Create the log_sum_revenue column.
+
+        Returns:
+           A DataFrame containing one column, log_sum_revenue, for the
+           training set.
+        """
+
+        # Get revenue and fill NaN with zero
+        train_df = self.train.copy(deep=False)
+        train_df['revenue'] = train_df['totals.transactionRevenue']
+        train_df['revenue'] = train_df['revenue'].astype('float').fillna(0)
+
+        # Group by visitor and sum, log
+        train_gdf = train_df.groupby('fullVisitorId')
+        train_revenue_sum = train_gdf['revenue'].sum()
+        train_revenue_log_sum = (train_revenue_sum + 1).apply(np.log)
+        
+        return train_revenue_log_sum
+        
+    
+    def _make_json_converter(self, column_name):
+
+        """Helper function to interpret columns in PANDAS."""
         return lambda x: {column_name: json.loads(x)}
 
+    
+    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

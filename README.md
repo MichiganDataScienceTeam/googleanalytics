@@ -4,6 +4,12 @@
 
 1. Clone this repo
 ```
+git clone git@github.com:MichiganDataScienceTeam/googleanalytics.git
+```
+
+If you don't have an SSH key set up on Github, the above will not work.
+As a temporary solution, use the command below.
+```
 git clone https://github.com/MichiganDataScienceTeam/googleanalytics.git
 ```
 
@@ -15,19 +21,31 @@ cd data
 unzip train.csv.zip
 unzip test.csv.zip
 unzip sample_submission.csv.zip
-chmod +r train.csv test.csv sample_submission.csv.zip
+chmod +r train.csv test.csv sample_submission.csv
 cd ..
 ```
 
-4. Check to make sure the dataset is in the correct place
+4. Create a virtualenv named env so that you can prevent version conflicts (this will likely solve any package installation issues you have.)
 ```
-python dataset.py --debug
+sudo pip install virtualenv
+python -m virtualenv env
 ```
 
-5. Run the exploration code. Note: removing the `--debug` flag will
+5. Activate/go into the virtualenv
+```
+source env/bin/activate
+```
+
+6. Install the required packages.
+```
+pip install -r requirements.txt
+```
+
+7. Make sure the dataset is in the correct place and run the exploration code. Note: removing the `--debug` flag will
 cause the full dataset to be loaded, which may take a long time on
 your machine.
 ```
+python dataset.py --debug
 python explore.py --debug
 ```
 
