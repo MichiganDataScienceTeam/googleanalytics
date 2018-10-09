@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import json
 import argparse
+from sklearn import preprocessing
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
@@ -85,6 +86,7 @@ class Dataset():
 
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
+        df['geoNetwork_networkDomain'] = self._convert_geoNetwork_domain()
         
         return df
 
@@ -107,15 +109,38 @@ class Dataset():
         train_revenue_log_sum = (train_revenue_sum + 1).apply(np.log)
         
         return train_revenue_log_sum
-        
-    
+
     def _make_json_converter(self, column_name):
 
         """Helper function to interpret columns in PANDAS."""
         return lambda x: {column_name: json.loads(x)}
 
-    
-    
+    def _convert_geoNetwork_domain(self):
+        """Ont hot encode domain, location, region, subContinent in geoNetwork.
+        Missing value automatically imputed by one hot encoder.
+        Standardize using normal distribution.
+        Group by fullVisitorID.
+
+        Returns:
+            A DataFrame containing preprocessed geoNetwork Data with one hot encoding.
+        """
+        train_df = self.train.copy(deep=False)
+        to_encode = ['networkDomain', 'networkLocation', 'region', 'subContinent']
+        results = pd.DataFrame()
+        for index, row in train_df.iterrows():
+            for item in to_encode:
+                individual_key = 'geoNetwork.' + item
+                row[individual_key] = row['geoNetwork']['geoNetwork'][item]
+        for item in to_encode:
+            individual_key = 'geoNetwork.' + item
+            encoded = pd.get_dummies(train_df[individual_key], prefix=individual_key)
+            results = pd.concat([results, encoded], axis=1)
+        columns = results.columns
+        results[columns] = preprocessing.scale(results[columns])
+        results[columns] = preprocessing.normalize(results[columns], norm='l2')
+
+        return results
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -125,6 +150,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Make sure we can load the dataset
+    args.debug = True
     dataset = Dataset(debug=args.debug)
 
     # Sanity check, make sure we have the right number of rows
@@ -138,3 +164,4 @@ if __name__ == '__main__':
         assert num_test == _NUM_ROWS_TEST, 'Incorrect number of test examples found.'
 
     print('Successfully loaded the dataset.')
+    dataset.preprocess()
