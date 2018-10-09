@@ -59,6 +59,7 @@ def main(args):
 
     # Statistics of sales made by first time visitors vs returning visitors
     first_and_return_visits = explore_utils.find_return_visit_stats(data)
+    first_and_return_visits = first_and_return_visits.round(2)
     print("\nStatistics of total transactions for unique visitors: \n{}\n"
         .format(first_and_return_visits))
 

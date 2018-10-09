@@ -123,7 +123,7 @@ def find_transaction_by_region(data):
 
 
 def find_return_visit_stats(dataset):
-    """Find the statistics of total transactions for returnining visitors
+    """Find the statistics of total transactions for returning visitors
 
     args:
         dataset (Dataset): the google analytics dataset.
