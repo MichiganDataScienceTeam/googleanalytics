@@ -120,3 +120,27 @@ def find_transaction_by_region(data):
     new_df = avg[avg['rev']>0]
     new_df.columns = ['Transaction']
     return new_df.sort_values(by=['Transaction'])
+
+
+def find_return_visit_stats(dataset):
+    """Find the statistics of total transactions for returning visitors
+
+    args:
+        dataset (Dataset): the google analytics dataset.
+
+    returns:    
+        Dataframe of transaction statistics for first time visitors versus return visitors
+    """
+
+    train_df = dataset.train.copy()
+    train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float).fillna(0) / 10000
+    group_df = (train_df[['fullVisitorId', 'visitNumber', 'revenue']]
+          .groupby('fullVisitorId', as_index=False)
+          .agg({'visitNumber': 'max', 'revenue': 'sum'}))
+    first_stats = (group_df[group_df['visitNumber'] == 1]['revenue']
+                  .describe(percentiles=[.95, .99, .999, .9999])
+                  .rename('First Time Visitor'))
+    return_stats = (group_df[group_df['visitNumber'] != 1]['revenue']
+                    .describe(percentiles=[.95, .99, .999, .9999])
+                    .rename('Return Visitor'))
+    return pd.concat([first_stats, return_stats], axis=1)
