@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import pandas as pd
 
 def find_most_visit(dataset):
     """Find what is the most visited times of single customer.(only in train set)
@@ -136,10 +135,9 @@ def find_revenue_summary_statistics_for_devices(dataset, includeZeroes):
     """
 
     train_df = dataset.train.copy()
-    test_df = dataset.test.copy()
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float).fillna(0) / 10000.0
 
-    if includeZeroes == False:
+    if not includeZeroes
         train_df = train_df[train_df['revenue'] > 0.0]
 
     train_df['deviceCategory'] = train_df['device.deviceCategory']
@@ -172,7 +170,6 @@ def find_percent_sessionIds_using_certain_device(dataset):
 
     """
     train_df = dataset.train.copy()
-    test_df = dataset.test.copy()
 
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float).fillna(0) / 10000.0
     train_df = train_df[train_df['revenue'] > 0]
@@ -200,7 +197,6 @@ def find_percent_of_total_revenue_by_device(dataset):
 
     """
     train_df = dataset.train.copy()
-    test_df = dataset.test.copy()
 
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float).fillna(0) / 10000.0
     train_df['deviceCategory'] = train_df['device.deviceCategory']
@@ -225,7 +221,6 @@ def find_percent_device_uses_generating_revenue(dataset):
 
     """
     train_df = dataset.train.copy()
-    test_df = dataset.test.copy()
 
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float).fillna(0)
     train_df['deviceCategory'] = train_df['device.deviceCategory']
