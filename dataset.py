@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import json
 import argparse
+from sklearn import preprocessing
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
@@ -85,7 +86,7 @@ class Dataset():
 
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
-        
+        df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
         return df
 
     def _make_log_sum_revenue(self):
@@ -105,17 +106,34 @@ class Dataset():
         train_gdf = train_df.groupby('fullVisitorId')
         train_revenue_sum = train_gdf['revenue'].sum()
         train_revenue_log_sum = (train_revenue_sum + 1).apply(np.log)
-        
         return train_revenue_log_sum
-        
-    
+
+    def _make_traffic_source_preprocessing(self):
+        """Create the encoding columns of trafficSource.medium,trafficSource.referralPath, trafficSource.source.
+
+        Returns:
+           A DataFrame containing three columns, encoding_medium, encoding_referralPath, encoding_source, for the
+           training set.
+        """
+        # Get the trafficSource.medium,trafficSource.referralPath, trafficSource.source.
+        train_df = self.train.copy(deep=False)
+        le = preprocessing.LabelEncoder()
+        to_encode = ['medium', 'referralPath', 'source']
+        for item in to_encode:
+            item_key = 'trafficSource.' + item
+            encoding_key = 'encoding_' + item
+            train_df[item_key] = train_df[item_key].fillna("missing")
+            fitting_label = train_df[item_key].unique()
+            le.fit(fitting_label)
+            train_df[encoding_key] = le.transform(train_df[item_key])
+        train_gdf = train_df.groupby('fullVisitorId')
+        return train_gdf['encoding_medium'].sum(), train_gdf['encoding_referralPath'].sum(), train_gdf['encoding_source'].sum()
+
     def _make_json_converter(self, column_name):
 
         """Helper function to interpret columns in PANDAS."""
         return lambda x: {column_name: json.loads(x)}
 
-    
-    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
