@@ -40,12 +40,10 @@ def main(args):
     # channelGroupings and customer revenue (#31)
     counts, means = explore_utils.find_channel_grouping_revenue(data)
     print('Channel Grouping Counts:')
-    for key in sorted(counts, key=counts.get, reverse=True):
-        print('\t{}: {}'.format(key, counts[key]))
+    print(counts)
 
     print('Mean Total Revenue by Channel Grouping')
-    for key in sorted(means, key=means.get, reverse=True):
-        print('\t{}: ${:.2f}'.format(key, means[key]))
+    print(means)
 
     # transactionRevenue by region
 
