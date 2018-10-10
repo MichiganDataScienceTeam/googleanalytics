@@ -54,13 +54,33 @@ def main(args):
     # Unique Visitor Percentage
     print("%2.2f%% of all visitors to the site visit exactly once." % explore_utils.find_one_visit_percent(data))
 
-
     # Statistics of sales made by first time visitors vs returning visitors
     first_and_return_visits = explore_utils.find_return_visit_stats(data)
     first_and_return_visits = first_and_return_visits.round(2)
     print("\nStatistics of total transactions for unique visitors: \n{}\n"
         .format(first_and_return_visits))
 
+    # Summary statistics for revenue generated, by device
+    # First print-out includes sessions that didn't produce revenue
+    # Second print-out only includes sessions that generated revenue
+    print("Revenue summary statistics by device, zeroes included: \n",
+          explore_utils.find_revenue_summary_statistics_for_devices(data, True))
+    print ("Revenue summary statistics by device, zeroes excluded: \n",
+           explore_utils.find_revenue_summary_statistics_for_devices(data, False))
+
+    # Prints out what percent of revenue generating sessions were accessed via a particular device
+    print("Percent of revenue generating sessions that used a particular device: \n",
+          explore_utils.find_percent_sessionIds_using_certain_device(data))
+
+    # Prints out the percent of total revenue that can be attributed to sessions
+    # accessed via a particular device
+    print("Percent of total revenue attributed to sessions using a particular device: \n",
+          explore_utils.find_percent_of_total_revenue_by_device(data))
+
+    # Prints out the percent of sessions accessed via a particular device taht
+    # generated revenue
+    print("Percent of total sessions using a particular device that generated revenue: \n",
+          explore_utils.find_percent_device_uses_generating_revenue(data))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
