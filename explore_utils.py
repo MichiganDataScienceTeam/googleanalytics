@@ -102,6 +102,7 @@ def find_channel_grouping_revenue(dataset):
 
     return counts, means
 
+
 def find_transaction_by_region(data):
     """ Find the average transaction revenue by region
 
@@ -120,3 +121,15 @@ def find_transaction_by_region(data):
     new_df = avg[avg['rev']>0]
     new_df.columns = ['Transaction']
     return new_df.sort_values(by=['Transaction'])
+  
+def find_percentage_single_transaction(dataset):
+
+    train_df2 = dataset.train.copy()
+    train_df2.set_index('fullVisitorId', inplace=True)
+    continents = train_df2['geoNetwork.continent'].unique()
+    result = ""
+    for con in continents:
+        number_of_people = train_df2[train_df2['geoNetwork.continent'] == con]['visitNumber'].count()
+        number_of_single_visits = train_df2[(train_df2['geoNetwork.continent'] == con) & (train_df2['visitNumber']== 1)]['visitNumber'].count()
+        result = result + 'Percentage of people visited for once in '+ con + ': '+(str)("%.2f" %((number_of_single_visits/number_of_people)*100)) +'\n'
+    return result
