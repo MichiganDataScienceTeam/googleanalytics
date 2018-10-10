@@ -159,7 +159,7 @@ def find_revenue_summary_statistics_for_devices(dataset, includeZeroes):
     train_df = dataset.train.copy()
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float).fillna(0) / 10000.0
 
-    if not includeZeroes
+    if not includeZeroes:
         train_df = train_df[train_df['revenue'] > 0.0]
 
     train_df['deviceCategory'] = train_df['device.deviceCategory']
