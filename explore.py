@@ -47,6 +47,11 @@ def main(args):
     for key in sorted(means, key=means.get, reverse=True):
         print('\t{}: ${:.2f}'.format(key, means[key]))
 
+    # transactionRevenue by region
+
+    trans_by_region = explore_utils.find_transaction_by_region(data)
+    print("The transaction revenues by region are: ", trans_by_region)
+
 
     # Unique Visitor Percentage
     print("%2.2f%% of all visitors to the site visit exactly once." % explore_utils.find_one_visit_percent(data))

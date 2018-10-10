@@ -36,7 +36,7 @@ def find_customer_revenue_percentiles(
 
     """
 
-    train_df = dataset.train
+    train_df = dataset.train.copy(deep=False)
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float)
     revenue_per_customer = train_df.groupby('fullVisitorId')['revenue']
     total_revenue_per_customer = revenue_per_customer.sum().fillna(0) / 10000.0
@@ -64,16 +64,16 @@ def find_one_visit_percent(dataset):
 
     args:
         dataset (Dataset): the google analystics dataset
-    
+
     returns:
         The percent of total customers that have only visited once, based on their ID
-    
+
     """
     data = dataset.train.copy()
-    
+
     #gets DataFrame of each visitor's total number of visits
     total_visits = data.groupby("fullVisitorId")['visitNumber'].sum()
-    
+
     #counts all instances where the total visit number is exactly 1
     one_visit_count = np.sum(total_visits == 1)
 
@@ -82,7 +82,7 @@ def find_one_visit_percent(dataset):
 
     #returns this percent
     return percent_one_time_visitors
-    
+
 def find_channel_grouping_revenue(dataset):
     """
     args:
@@ -102,6 +102,26 @@ def find_channel_grouping_revenue(dataset):
 
     return counts, means
 
+
+def find_transaction_by_region(data):
+    """ Find the average transaction revenue by region
+
+    args:
+        dataset (Dataset): the google analytics Dataset
+
+    returns:
+        Dataframe of total transaction revenue by region in ascending order.
+
+    """
+    train_df = data.train
+    data = train_df.copy(deep=False)
+    data['rev'] = data['totals.transactionRevenue'].fillna(0).astype(float)
+    avg = data.groupby('geoNetwork.region')['rev'].mean()
+    avg = pd.DataFrame(avg)
+    new_df = avg[avg['rev']>0]
+    new_df.columns = ['Transaction']
+    return new_df.sort_values(by=['Transaction'])
+  
 def find_percentage_single_transaction(dataset):
 
     train_df2 = dataset.train.copy()
