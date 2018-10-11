@@ -86,7 +86,9 @@ class Dataset():
 
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
-        df['geoNetwork_networkDomain'] = self._convert_geoNetwork_domain()
+        tmp_geoNetwork = self._convert_geoNetwork_domain()
+        geoNetwork_columns = tmp_geoNetwork.columns
+        df[geoNetwork_columns] = tmp_geoNetwork[geoNetwork_columns]
         
         return df
 
@@ -125,8 +127,9 @@ class Dataset():
             A DataFrame containing preprocessed geoNetwork Data with one hot encoding.
         """
         train_df = self.train.copy(deep=False)
+        train_df.set_index('fullVisitorId', inplace=True)
         to_encode = ['networkDomain', 'networkLocation', 'region', 'subContinent']
-        results = pd.DataFrame()
+        results = pd.DataFrame(index=train_df.index.copy())
         for index, row in train_df.iterrows():
             for item in to_encode:
                 individual_key = 'geoNetwork.' + item
@@ -136,9 +139,10 @@ class Dataset():
             encoded = pd.get_dummies(train_df[individual_key], prefix=individual_key)
             results = pd.concat([results, encoded], axis=1)
         columns = results.columns
-        results[columns] = preprocessing.scale(results[columns])
-        results[columns] = preprocessing.normalize(results[columns], norm='l2')
-
+        scaler = preprocessing.StandardScaler()
+        results[columns] = scaler.fit_transform(results[columns])
+        results = results.groupby(results.index).agg('mean')
+        results[columns] = preprocessing.normalize(results[columns].values.astype(float), norm='l2')
         return results
 
 
@@ -150,7 +154,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Make sure we can load the dataset
-    args.debug = True
     dataset = Dataset(debug=args.debug)
 
     # Sanity check, make sure we have the right number of rows
@@ -164,4 +167,3 @@ if __name__ == '__main__':
         assert num_test == _NUM_ROWS_TEST, 'Incorrect number of test examples found.'
 
     print('Successfully loaded the dataset.')
-    dataset.preprocess()
