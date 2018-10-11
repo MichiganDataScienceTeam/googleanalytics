@@ -21,7 +21,7 @@
 ####    special hardware, like large memory nodes or GPUs or,
 ####    or if you use software that is restricted to campus use.
 
-#PBS -A engin_flux
+#PBS -A mdatascienceteam_flux
 #PBS -q flux
 
 #### #### ####  These are the least frequently changing options
@@ -68,8 +68,10 @@ fi
 
 echo "Running from $(pwd)"
 
-
 python explore.py > explore_output
 
 ##  If you copied any files to /tmp, make sure you delete them here!
+
+####  Finally, submit your job by running
+####  qsub flux/googleanalytics.pbs
 
