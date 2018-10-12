@@ -31,10 +31,9 @@ def main(args):
         print("%2.2f%% of customers spend less than: $%.2f" % (p, pv))
     
 
-    # The fraction of customers that have non-zero revenue
-    print("\n")
-    print("Fraction of customers that have non-zero revenue:    ",
-          explore_utils.find_fraction_of_customers_with_non_zero_revenue(data))
+    # The fraction of transactions that have non-zero revenue
+    print("Fraction of transactions that have non-zero revenue:    ",
+          explore_utils.find_fraction_of_transactions_with_non_zero_revenue(data))
     
 
     # Most common Sources of Traffic and counts
