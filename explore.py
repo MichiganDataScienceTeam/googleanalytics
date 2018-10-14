@@ -17,10 +17,7 @@ def main(args):
 
     print("Number of rows in the test set:        ", len(data.test))
     print("Number of columns in the test set:     ", len(data.test.columns))
-
-
-    # explore_utils.time(data)
-    
+   
     # Number of visits
 
     print("The most visit times for a customer in train set is: ",
