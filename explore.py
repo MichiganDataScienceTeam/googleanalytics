@@ -29,6 +29,12 @@ def main(args):
         percentiles)
     for p, pv in zip(percentiles, percentile_values):
         print("%2.2f%% of customers spend less than: $%.2f" % (p, pv))
+    
+
+    # The fraction of transactions that have non-zero revenue
+    print("Fraction of transactions that have non-zero revenue:    ",
+          explore_utils.find_fraction_of_transactions_with_non_zero_revenue(data))
+    
 
     # Most common Sources of Traffic and counts
     num_of_sources = 6

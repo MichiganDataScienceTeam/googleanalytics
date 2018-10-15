@@ -1,3 +1,5 @@
+from __future__ import division
+
 import pandas as pd
 import numpy as np
 
@@ -18,6 +20,28 @@ def find_most_visit(dataset):
     max_visit = train_gdf['visitNumber'].max()
 
     return max_visit
+
+
+def find_fraction_of_transactions_with_non_zero_revenue(dataset):
+    """Find the fraction of transactions in the google dataset with non-zero revenue.(only in train set)
+    
+    args:
+        dataset (Dataset): the google analytics dataset.
+        
+    returns:
+            The fraction of transactions with non-zero revenue.
+    """
+    
+    train_df = dataset.train.copy()
+    train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float)
+    
+    # The number of transactions that have non-zero revenue.
+    num_transactions_non_zero = np.count_nonzero(~np.isnan(train_df['revenue']))
+    
+    # The total number of transactions.
+    total_num_transactions = len(train_df)
+    
+    return(num_transactions_non_zero / total_num_transactions)
 
 
 def find_customer_revenue_percentiles(
