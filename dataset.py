@@ -5,8 +5,7 @@ import pandas as pd
 import numpy as np
 import json
 import argparse
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
+from sklearn import preprocessing
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
@@ -21,28 +20,42 @@ _NUM_ROWS_DEBUG = 1000
 class Dataset():
     """The Google Analytics dataset."""
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, skip_rows=False):
         """Load the data from disk.
 
         Args:
             debug (bool): An option to choose whether to load all
-              data.  If 'debug' is true, program will only read 100 rows
+              data.  If 'debug' is true, program will only read 1000 rows
               data from the csv file.
               However, one thing to pay attention is that if you load
               less data, the shape of DF is wrong, because some
-              columns daon't have any data until you read many many
+              columns don't have any data until you read many many
               rows.
+            skip_rows (bool): An option to load an evenly distributed
+              sample of the dataset. If 'debug' is true, _approximately_
+              1000 rows will be read from the csv file, but taken every
+              _NUM_SKIP_ROWS_TRAIN and _NUM_SKIP_ROWS_TEST rows instead
+              of just the first 1000 rows.
 
         """
+        if skip_rows and not debug:
+            raise ValueError('debug mode must be on to skip rows')
+        rows_to_skip_train = 1
+        rows_to_skip_test = 1
 
-        if(debug):
+        if debug and not skip_rows:
             nrows = _NUM_ROWS_DEBUG
         else:
             nrows = None
+        if skip_rows:
+            rows_to_skip_train = _NUM_ROWS_TRAIN // _NUM_ROWS_DEBUG
+            rows_to_skip_test = _NUM_ROWS_TEST // _NUM_ROWS_DEBUG
+
         type_change_columns = {"fullVisitorId": str,
                                "sessionId": str,
                                "visitId": str}
         json_columns = ['device', 'geoNetwork', 'totals', 'trafficSource']
+        date_columns = ['date', 'visitStartTime']
 
         converters = {column: self._make_json_converter(column)
                       for column in json_columns}
@@ -50,11 +63,13 @@ class Dataset():
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
                                  converters=converters,
                                  dtype=type_change_columns,
-                                 nrows=nrows)
+                                 nrows=nrows,
+                                 skiprows=lambda i: i % rows_to_skip_train !=0)
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
-                                nrows=nrows)
+                                nrows=nrows,
+                                skiprows=lambda i: i % rows_to_skip_test !=0)
 
         for column in json_columns:
             train_column_as_df = pd.io.json.json_normalize(self.train[column])
@@ -94,6 +109,7 @@ class Dataset():
         deviceCategory_encoding = self._preprocess_deviceCategory()
         df = pd.concat([df, deviceCategory_encoding], axis = 1)
 
+        df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
         return df
 
     def _make_log_sum_revenue(self):
@@ -113,9 +129,28 @@ class Dataset():
         train_gdf = train_df.groupby('fullVisitorId')
         train_revenue_sum = train_gdf['revenue'].sum()
         train_revenue_log_sum = (train_revenue_sum + 1).apply(np.log)
-
         return train_revenue_log_sum
 
+    def _make_traffic_source_preprocessing(self):
+        """Create the encoding columns of trafficSource.medium,trafficSource.referralPath, trafficSource.source.
+
+        Returns:
+           A DataFrame containing three columns, encoding_medium, encoding_referralPath, encoding_source, for the
+           training set.
+        """
+        # Get the trafficSource.medium,trafficSource.referralPath, trafficSource.source.
+        train_df = self.train.copy(deep=False)
+        le = preprocessing.LabelEncoder()
+        to_encode = ['medium', 'referralPath', 'source']
+        for item in to_encode:
+            item_key = 'trafficSource.' + item
+            encoding_key = 'encoding_' + item
+            train_df[item_key] = train_df[item_key].fillna("missing")
+            fitting_label = train_df[item_key].unique()
+            le.fit(fitting_label)
+            train_df[encoding_key] = le.transform(train_df[item_key])
+        train_gdf = train_df.groupby('fullVisitorId')
+        return train_gdf['encoding_medium'].sum(), train_gdf['encoding_referralPath'].sum(), train_gdf['encoding_source'].sum()
 
     def _make_json_converter(self, column_name):
 
@@ -136,12 +171,12 @@ class Dataset():
         deviceCategory = train_df['deviceCategory']
 
         # Set up label encoder and then encode each device to an integer
-        le = LabelEncoder()
+        le = preprocessing.LabelEncoder()
         le_deviceCategory = le.fit_transform(deviceCategory)
         le_deviceCategory = le_deviceCategory.reshape(len(le_deviceCategory), 1)
 
         # Set up one hot encoder and then encode each integer to a column of 1's and 0's
-        ohe = OneHotEncoder(sparse = False)
+        ohe = preprocessing.OneHotEncoder(sparse = False)
         ohe_deviceCategory = ohe.fit_transform(le_deviceCategory)
         ohe_deviceCategory_df = pd.DataFrame(ohe_deviceCategory)
 
