@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import json
 import argparse
+from sklearn import preprocessing
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
@@ -85,7 +86,7 @@ class Dataset():
 
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
-        
+        df['encoding_visitId'], df['encoding_visitNumber'], df['encoding_visitStartTime']= self._make_visit_preprocessing()
         return df
 
     def _make_log_sum_revenue(self):
@@ -107,8 +108,34 @@ class Dataset():
         train_revenue_log_sum = (train_revenue_sum + 1).apply(np.log)
         
         return train_revenue_log_sum
+
+    def _make_visit_preprocessing(self):
+        """Create the encoded columns for visitId, visitNumber, and visitStartTime
         
-    
+        Returns:
+            A DataFrame containing three columns, encoding_visitId, encoding_visitNumber,
+            and encoding_visitStartTime for the training set
+        """
+        
+        train_df = self.train.copy(deep=False)
+        to_encode = ['visitNumber', 'visitStartTime']
+        le = preprocessing.LabelEncoder()
+        #encode visitNumber and visitStartTime
+        for item in to_encode:
+            encoding_key = 'encoding_' + item
+            train_df[item] = train_df[item].astype('float').fillna(0)
+            label = train_df[item].unique()
+            le.fit(label)
+            train_df[encoding_key] = le.transform(train_df[item])
+        #encode visitId
+        train_df['encoding_visitId'] = train_df['visitId'].fillna("missing")
+        train_gdf = train_df.groupby('fullVisitorId')
+        train_visitId_sum = train_gdf['encoding_visitId'].sum()
+        train_visitNumber_sum = train_gdf['encoding_visitNumber'].sum()
+        train_visitStart_sum = train_gdf['encoding_visitStartTime'].sum()
+        return train_visitId_sum, train_visitNumber_sum, train_visitStart_sum
+
+
     def _make_json_converter(self, column_name):
 
         """Helper function to interpret columns in PANDAS."""
