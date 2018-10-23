@@ -42,7 +42,7 @@ class Dataset():
             raise ValueError('debug mode must be on to skip rows')
         rows_to_skip_train = 1
         rows_to_skip_test = 1
-        
+
         if debug and not skip_rows:
             nrows = _NUM_ROWS_DEBUG
         else:
@@ -50,7 +50,7 @@ class Dataset():
         if skip_rows:
             rows_to_skip_train = _NUM_ROWS_TRAIN // _NUM_ROWS_DEBUG
             rows_to_skip_test = _NUM_ROWS_TEST // _NUM_ROWS_DEBUG
-            
+
         type_change_columns = {"fullVisitorId": str,
                                "sessionId": str,
                                "visitId": str}
@@ -63,12 +63,12 @@ class Dataset():
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
                                  converters=converters,
                                  dtype=type_change_columns,
-                                 nrows=nrows, 
+                                 nrows=nrows,
                                  skiprows=lambda i: i % rows_to_skip_train !=0)
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
-                                nrows=nrows, 
+                                nrows=nrows,
                                 skiprows=lambda i: i % rows_to_skip_test !=0)
 
         for column in json_columns:
@@ -103,6 +103,7 @@ class Dataset():
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
         df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
+        df['bounces'],df['hits'],df['pageviews'],df['newVisits'],df['visits'] = self._make_preprocess_totals()
         return df
 
     def _make_log_sum_revenue(self):
@@ -144,6 +145,25 @@ class Dataset():
             train_df[encoding_key] = le.transform(train_df[item_key])
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_medium'].sum(), train_gdf['encoding_referralPath'].sum(), train_gdf['encoding_source'].sum()
+
+    def _make_preprocess_totals(self):
+        """Create the processed totals.bounces, totals.hits,totals.newVisits, totals.pageviews, totals.visits columns
+
+        Returns:
+           A DataFrame containing 5 columns bounces, hits, newVisits, pageviews, visits, for the
+           training set. Grouped by fullVisitorId.
+        """
+
+        # Get columns and fill NaN with zero
+        train_df = self.train.copy(deep=False)
+        train_df['bounces']   =  train_df['totals.bounces'].astype('float').fillna(0)  # 1 for not a bounce  0 for bounce
+        train_df['hits']      =  train_df['totals.hits'].astype('float').fillna(0)     # 0 if no hits
+        train_df['newVisits'] =  train_df['totals.newVisits'].astype('float').fillna(0) # 0 if not a new visit 1 if a new visit
+        train_df['pageviews'] =  train_df['totals.pageviews'].astype('float').fillna(0)
+        train_df['visits']    =  train_df['totals.visits'].astype('float').fillna(0)
+        # Group by visitor
+        train_gdf = train_df.groupby('fullVisitorId')
+        return train_gdf['bounces'].sum(),train_gdf['hits'].sum(),train_gdf['pageviews'].sum(),train_gdf['newVisits'].sum(),train_gdf['visits'].sum()
 
     def _make_json_converter(self, column_name):
 
