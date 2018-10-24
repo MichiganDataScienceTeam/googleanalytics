@@ -154,28 +154,31 @@ class Dataset():
         return lambda x: {column_name: json.loads(x)}
 
     def _make_OS_OSSystemVersion_screenColors_screenRes_preprocessing(self):
-        """Create the encoding columns of date, device, fullVisitorId, and geoNetwork
+        """Create the encoding columns of operatingSystem, operatingSystemVersion,
+            screenColors, and screenResolution
 
         Returns:
-            A DataFrame containing the four columns date, device, fullVisitorId, and geoNetwork, all encoded with
-            one hot encoding
+            A DataFrame containing the four columns encode_operatingSystem, encode_operatingSystemVersion,
+            encode_screenColors, and encode_screenResolution
         """
         train_df = self.train.copy(deep=False)
 
-        #encode
-        le = preprocessing.LabelEncoder()
-        to_encode = ['operatingSystem', 'operatingSystemVersion', 'screenColors', 'screenResolution']
-        for item in to_encode:
+        #create a label encoder and encode each column
+        label_encoder = preprocessing.LabelEncoder()
+        to_encode_cols = ['operatingSystem', 'operatingSystemVersion', 'screenColors', 'screenResolution']
+        for item in to_encode_cols:
+            #fix missing vals and separate all unique vals, fitting the data
             item_key = 'device.' + item
             encoding_key = 'encoding_' + item
             train_df[item_key] = train_df[item_key].fillna("missing")
             fitting_label = train_df[item_key].unique()
-            le.fit(fitting_label)
-            train_df[encoding_key] = le.transform(train_df[item_key])
-        train_gdf = train_df.groupby('fullVisitorId')
+            label_encoder.fit(fitting_label)
+            train_df[encoding_key] = label_encoder.transform(train_df[item_key])
+        train_dff = train_df.groupby('fullVisitorId')
 
         #return the multiple columns
-        return train_gdf['encoding_operatingSystem'].sum(), train_gdf['encoding_operatingSystemVersion'].sum(), train_gdf['encoding_screenColors'].sum(), train_gdf['encoding_screenResolution'].sum()
+        return train_dff['encoding_operatingSystem'].sum(), train_dff['encoding_operatingSystemVersion'].sum(), \
+               train_dff['encoding_screenColors'].sum(), train_dff['encoding_screenResolution'].sum()
 
 
 
