@@ -6,6 +6,7 @@ import numpy as np
 import json
 import argparse
 from sklearn import preprocessing
+from sklearn.preprocessing import OneHotEncoder
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
@@ -103,6 +104,8 @@ class Dataset():
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
         df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
+        df['encoding_operatingSystem'], df['encoding_operatingSystemVersion'], df[
+            'encoding_screenColors'], df['encoding_screenResolution'] = self._make_OS_OSSystemVersion_screenColors_screenRes_preprocessing()
         return df
 
     def _make_log_sum_revenue(self):
@@ -150,6 +153,31 @@ class Dataset():
         """Helper function to interpret columns in PANDAS."""
         return lambda x: {column_name: json.loads(x)}
 
+    def _make_OS_OSSystemVersion_screenColors_screenRes_preprocessing(self):
+        """Create the encoding columns of date, device, fullVisitorId, and geoNetwork
+
+        Returns:
+            A DataFrame containing the four columns date, device, fullVisitorId, and geoNetwork, all encoded with
+            one hot encoding
+        """
+        train_df = self.train.copy(deep=False)
+
+        #encode
+        le = preprocessing.LabelEncoder()
+        to_encode = ['operatingSystem', 'operatingSystemVersion', 'screenColors', 'screenResolution']
+        for item in to_encode:
+            item_key = 'device.' + item
+            encoding_key = 'encoding_' + item
+            train_df[item_key] = train_df[item_key].fillna("missing")
+            fitting_label = train_df[item_key].unique()
+            le.fit(fitting_label)
+            train_df[encoding_key] = le.transform(train_df[item_key])
+        train_gdf = train_df.groupby('fullVisitorId')
+
+        #return the multiple columns
+        return train_gdf['encoding_operatingSystem'].sum(), train_gdf['encoding_operatingSystemVersion'].sum(), train_gdf['encoding_screenColors'].sum(), train_gdf['encoding_screenResolution'].sum()
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -170,5 +198,7 @@ if __name__ == '__main__':
     else:
         assert num_train == _NUM_ROWS_TRAIN, 'Incorrect number of training examples found.'
         assert num_test == _NUM_ROWS_TEST, 'Incorrect number of test examples found.'
+
+    dataset.preprocess()
 
     print('Successfully loaded the dataset.')
