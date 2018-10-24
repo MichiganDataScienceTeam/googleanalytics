@@ -6,6 +6,7 @@ import numpy as np
 import json
 import argparse
 from sklearn import preprocessing
+from sklearn.preprocessing import OneHotEncoder
 
 _DATA_DIR = './data'
 _TRAIN = 'train.csv'
@@ -103,6 +104,8 @@ class Dataset():
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
         df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
+        df['encoding_operatingSystem'], df['encoding_operatingSystemVersion'], df[
+            'encoding_screenColors'], df['encoding_screenResolution'] = self._make_OS_OSSystemVersion_screenColors_screenRes_preprocessing()
         return df
 
     def _make_log_sum_revenue(self):
@@ -150,6 +153,34 @@ class Dataset():
         """Helper function to interpret columns in PANDAS."""
         return lambda x: {column_name: json.loads(x)}
 
+    def _make_OS_OSSystemVersion_screenColors_screenRes_preprocessing(self):
+        """Create the encoding columns of operatingSystem, operatingSystemVersion,
+            screenColors, and screenResolution
+
+        Returns:
+            A DataFrame containing the four columns encode_operatingSystem, encode_operatingSystemVersion,
+            encode_screenColors, and encode_screenResolution
+        """
+        train_df = self.train.copy(deep=False)
+
+        #create a label encoder and encode each column
+        label_encoder = preprocessing.LabelEncoder()
+        to_encode_cols = ['operatingSystem', 'operatingSystemVersion', 'screenColors', 'screenResolution']
+        for item in to_encode_cols:
+            #fix missing vals and separate all unique vals, fitting the data
+            item_key = 'device.' + item
+            encoding_key = 'encoding_' + item
+            train_df[item_key] = train_df[item_key].fillna("missing")
+            fitting_label = train_df[item_key].unique()
+            label_encoder.fit(fitting_label)
+            train_df[encoding_key] = label_encoder.transform(train_df[item_key])
+        train_dff = train_df.groupby('fullVisitorId')
+
+        #return the multiple columns
+        return train_dff['encoding_operatingSystem'].sum(), train_dff['encoding_operatingSystemVersion'].sum(), \
+               train_dff['encoding_screenColors'].sum(), train_dff['encoding_screenResolution'].sum()
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -170,5 +201,7 @@ if __name__ == '__main__':
     else:
         assert num_train == _NUM_ROWS_TRAIN, 'Incorrect number of training examples found.'
         assert num_test == _NUM_ROWS_TEST, 'Incorrect number of test examples found.'
+
+    dataset.preprocess()
 
     print('Successfully loaded the dataset.')
