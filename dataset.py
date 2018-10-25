@@ -103,6 +103,7 @@ class Dataset():
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
         df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
+        df['encoding_campaign'], df['encoding_isTrueDirect'], df['encoding_keyword'] = self._another_traffic_source_preprocessing()
         return df
 
     def _make_log_sum_revenue(self):
@@ -145,6 +146,32 @@ class Dataset():
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_medium'].sum(), train_gdf['encoding_referralPath'].sum(), train_gdf['encoding_source'].sum()
 
+    def _another_traffic_source_preprocessing(self):
+        """Create the encoding columns of trafficSource.campaign,trafficSource.isTrueDirect, trafficSource.keyword.
+
+        Returns:
+           A DataFrame containing three columns, encoding_campaign, encoding_isTrueDirect, encoding_keyword, for the
+           training set.
+        """
+        # For 'campaign' & 'keyword'
+        train_df = self.train.copy(deep=False)
+        le = preprocessing.LabelEncoder()
+        to_encode = ['campaign', 'keyword']
+        for item in to_encode:
+            item_key = 'trafficSource.' + item
+            encoding_key = 'encoding_' + item
+            train_df[item_key] = train_df[item_key].fillna("missing")
+            fitting_label = train_df[item_key].unique()
+            le.fit(fitting_label)
+            train_df[encoding_key] = le.transform(train_df[item_key])
+        # Now for 'isTrueDirect'
+        item_key = 'trafficSource.isTrueDirect'
+        encoding_key = 'encoding_isTrueDirect'
+        train_df[encoding_key] = train_df[item_key].fillna(False)
+
+        train_gdf = train_df.groupby('fullVisitorId')
+        return train_gdf['encoding_campaign'].sum(), train_gdf['encoding_isTrueDirect'].sum(), train_gdf['encoding_keyword'].sum()
+   
     def _make_json_converter(self, column_name):
 
         """Helper function to interpret columns in PANDAS."""
