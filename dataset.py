@@ -102,12 +102,11 @@ class Dataset():
 
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
-        self._preprocess_deviceCategory()
 
         # deviceCategory Preprocessing
 
         deviceCategory_encoding = self._preprocess_deviceCategory()
-        df = pd.concat([df, deviceCategory_encoding], axis = 1)
+        df = df.join(deviceCategory_encoding)
 
         df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
         df['encoding_campaign'], df['encoding_isTrueDirect'], df['encoding_keyword'] = self._another_traffic_source_preprocessing()
@@ -178,7 +177,7 @@ class Dataset():
 
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_campaign'].sum(), train_gdf['encoding_isTrueDirect'].sum(), train_gdf['encoding_keyword'].sum()
-   
+
     def _make_json_converter(self, column_name):
 
         """Helper function to interpret columns in PANDAS."""
@@ -189,34 +188,23 @@ class Dataset():
         args:
             self: the google analytics Dataset
         Returns:
-            A DataFrame containing three columns: is_desktop, is_mobile, is_tablet
+            A DataFrame containing columns for each type of device found in the dataset.
+            Column names are formatted as 'is_[device name]'
+            Missing data is found in the column 'is_missing_device'
         """
-
         # Obtain list of device categories from training set
         train_df = dataset.train.copy(deep = False)
-        train_df['deviceCategory'] = train_df['device.deviceCategory']
-        deviceCategory = train_df['deviceCategory']
+        deviceCategory = train_df['device.deviceCategory'].fillna('missing_device')
 
-        # Set up label encoder and then encode each device to an integer
-        le = preprocessing.LabelEncoder()
-        le_deviceCategory = le.fit_transform(deviceCategory)
-        le_deviceCategory = le_deviceCategory.reshape(len(le_deviceCategory), 1)
+        # Create one hot encoding
+        ohe_deviceCategory_df = pd.get_dummies(deviceCategory)
 
-        # Set up one hot encoder and then encode each integer to a column of 1's and 0's
-        ohe = preprocessing.OneHotEncoder(sparse = False)
-        ohe_deviceCategory = ohe.fit_transform(le_deviceCategory)
-        ohe_deviceCategory_df = pd.DataFrame(ohe_deviceCategory)
-
-        # Convert column names of one hot encoded data back into human understandable names
-        col_names_length = len(ohe_deviceCategory_df.columns)
-        new_colNames = [''] * col_names_length
-        for i in range(col_names_length):
-            device_name = "is_" + le.inverse_transform(i)
-            new_colNames[i] = device_name
-        ohe_deviceCategory_df.columns = new_colNames
+        # Edit one hot encoding names to include 'is_' in front of each device type
+        oheCols = list(ohe_deviceCategory_df.columns)
+        oheCols = ['is_' + device for device in oheCols]
+        ohe_deviceCategory_df.columns = oheCols
 
         return ohe_deviceCategory_df
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
