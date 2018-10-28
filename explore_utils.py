@@ -304,3 +304,20 @@ def find_percent_device_uses_generating_revenue(dataset):
 
     return percent_df
 
+def find_seasonal_trends(dataset):
+
+    df = dataset.train.copy()
+    
+    dates=pd.to_datetime(df['date'], format='%Y%m%d')
+    df['revenue'] = df['totals.transactionRevenue'].astype(float)
+    df['datetime'] = pd.to_datetime(df['date'], format='%Y%m%d')
+
+    total_revenue_per_day = df.groupby('datetime').sum().fillna(0).revenue / 10000.0
+    total_revenue_per_day = total_revenue_per_day[total_revenue_per_day!=0]
+
+    daily_count = df.groupby('datetime').datetime.count()
+    daily_revenue_count = df.groupby('datetime').revenue.count()
+    daily_percent = daily_revenue_count/daily_count
+    daily_percent = daily_percent[daily_percent!=0] * 100
+
+    return dates, total_revenue_per_day, daily_percent
