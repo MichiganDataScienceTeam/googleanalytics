@@ -36,7 +36,7 @@ python -m virtualenv env
 source env/bin/activate
 ```
 
-6. Install the required packages. Note: need to have matplotlib 3.0.0 installed.
+6. Install the required packages.
 ```
 pip install -r requirements.txt
 ```
