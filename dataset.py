@@ -103,8 +103,6 @@ class Dataset():
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
         df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
-        df = pd.concat([df, self._make_browser_preprocessing()],axis=1,sort=True)
-        
         df['encoding_campaign'], df['encoding_isTrueDirect'], df['encoding_keyword'] = self._another_traffic_source_preprocessing()
         return df
 
@@ -147,38 +145,6 @@ class Dataset():
             train_df[encoding_key] = le.transform(train_df[item_key])
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_medium'].sum(), train_gdf['encoding_referralPath'].sum(), train_gdf['encoding_source'].sum()
-
-    def _make_browser_preprocessing(self):
-        """Creates the encoding columns of device.browser, device.browserSize, device.browserVersion
-
-        Returns:
-            A Dataframe containing one hot encoded columns for unique values of device.browser,
-            device.browserSize, device.browserVersion
-
-        """
-        train_df = self.train.copy(deep=False)
-        browser = self._one_hot('device.browser')
-        browserSize = self._one_hot('device.browserSize')
-        browserVersion = self._one_hot('device.browserVersion')
-
-        return pd.concat([browser,browserSize,browserVersion],axis=1,sort=True)
-
-    def _one_hot(self, key):
-        """Creates one hot encodings for categorical variables
-
-        Args:
-            key (string): name of column in dataframe to one hot encode
-
-        Returns:
-            A Dataframe containing one hot encoding of categorical variable, grouped by
-            visitor ID. Columns are unique values of variable.
-        """
-        train_df = self.train.copy(deep=False)
-        one_hot = pd.get_dummies(train_df[key],drop_first=True)
-        one_hot.columns=[key+'_'+col for col in one_hot.columns.values]
-        train_df = pd.concat([train_df,one_hot],axis=1,sort=True)
-        train_dfg = train_df.groupby('fullVisitorId')
-        return train_dfg[one_hot.columns.values].sum()
 
     def _another_traffic_source_preprocessing(self):
         """Create the encoding columns of trafficSource.campaign,trafficSource.isTrueDirect, trafficSource.keyword.

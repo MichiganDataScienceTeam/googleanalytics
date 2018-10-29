@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-import matplotlib.pyplot as plt
-
 import dataset
 import explore_utils
 import argparse
@@ -10,7 +8,7 @@ import argparse
 def main(args):
 
     print("Loading the dataset...")
-    data = dataset.Dataset(args.debug, args.skip_rows)
+    data = dataset.Dataset(args.debug)
 
     print("Number of rows in the training set:    ", len(data.train))
     print("Number of columns in the training set: ", len(data.train.columns))
@@ -87,43 +85,16 @@ def main(args):
     print("Percent of total revenue attributed to sessions using a particular device: \n",
           explore_utils.find_percent_of_total_revenue_by_device(data))
 
-    # Prints out the percent of sessions accessed via a particular device that
+    # Prints out the percent of sessions accessed via a particular device taht
     # generated revenue
     print("Percent of total sessions using a particular device that generated revenue: \n",
           explore_utils.find_percent_device_uses_generating_revenue(data))
-
-    # Plots (1) monthly and (2) yearly histograms of number of site visits,
-    # (3) total revenue scattergram and (4) percent visitors who make purchases
-    # scattergrams
-    dates, total_revenue_per_day, daily_percent = explore_utils.find_seasonal_trends(data)
-    fix, axs = plt.subplots(4, 1, sharex=True)
-    axs[3].set_xlabel('Date')
-
-    axs[0].hist(dates, bins=12)
-    axs[0].set_title('Monthly')
-    axs[0].set_ylabel('Number of visits')
-
-    axs[1].hist(dates, bins=54)
-    axs[1].set_title('Yearly')
-    axs[1].set_ylabel('Number of visits')
-
-    axs[2].scatter(total_revenue_per_day.index, total_revenue_per_day)
-    axs[2].set_title('Revenue')
-    axs[2].set_ylabel('Total revenue')
-
-    axs[3].scatter(daily_percent.index, daily_percent)
-    axs[3].set_title('Percent purchase')
-    axs[3].set_ylabel('Percent')
-
-    plt.show()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Explore the Google Analytics dataset.')
     parser.add_argument('--debug', dest='debug', action='store_true',
                         help='run in debug mode')
-    parser.add_argument('--skip-rows', dest='skip_rows', action='store_true',
-                        help='run with skip_rows enabled')
     args = parser.parse_args()
 
     main(args)
