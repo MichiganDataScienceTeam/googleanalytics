@@ -107,7 +107,11 @@ def main(args):
     axs[3].set_title('Percent purchase')
     axs[3].set_ylabel('Percent')
 
-    plt.show()
+    plt.tight_layout()
+    if args.save:
+        plt.savefig('seasonal_trends.png')
+    if not args.no_display:
+        plt.show()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -116,6 +120,10 @@ if __name__ == '__main__':
                         help='run in debug mode')
     parser.add_argument('--skip-rows', dest='skip_rows', action='store_true',
                         help='run with skip_rows enabled')
+    parser.add_argument('--no-display', dest='no_display', action='store_true',
+                        help='display matplotlib graphs')
+    parser.add_argument('--save', dest='save', action='store_true',
+                        help='save matplotlib graphs to disk')
     args = parser.parse_args()
 
     main(args)

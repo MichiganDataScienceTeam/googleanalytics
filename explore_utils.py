@@ -274,7 +274,7 @@ def find_seasonal_trends(dataset):
 
     daily_count = df.groupby('datetime').datetime.count()
     daily_revenue_count = df.groupby('datetime').revenue.count()
-    daily_percent = daily_revenue_count/daily_count
+    daily_percent = daily_revenue_count / daily_count
     daily_percent = daily_percent[daily_percent!=0] * 100
 
     return dates, total_revenue_per_day, daily_percent
