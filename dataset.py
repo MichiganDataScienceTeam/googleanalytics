@@ -7,9 +7,11 @@ import json
 import argparse
 from sklearn import preprocessing
 
-_DATA_DIR = './data'
-_TRAIN = 'train.csv'
-_TEST = 'test.csv'
+_DATA_DIR = './processed_data'
+_TRAIN = 'trainminusval_visits.csv'
+_TRAIN_LABELS = 'trainminusval_revenues.csv'
+_TEST = 'val_visits.csv'
+_TEST_LABELS = 'val_revenues.csv'
 
 _NUM_ROWS_TRAIN = 903653
 _NUM_ROWS_TEST = 804684
@@ -42,7 +44,7 @@ class Dataset():
             raise ValueError('debug mode must be on to skip rows')
         rows_to_skip_train = 1
         rows_to_skip_test = 1
-        
+
         if debug and not skip_rows:
             nrows = _NUM_ROWS_DEBUG
         else:
@@ -50,7 +52,7 @@ class Dataset():
         if skip_rows:
             rows_to_skip_train = _NUM_ROWS_TRAIN // _NUM_ROWS_DEBUG
             rows_to_skip_test = _NUM_ROWS_TEST // _NUM_ROWS_DEBUG
-            
+
         type_change_columns = {"fullVisitorId": str,
                                "sessionId": str,
                                "visitId": str}
@@ -63,12 +65,12 @@ class Dataset():
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
                                  converters=converters,
                                  dtype=type_change_columns,
-                                 nrows=nrows, 
+                                 nrows=nrows,
                                  skiprows=lambda i: i % rows_to_skip_train !=0)
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
-                                nrows=nrows, 
+                                nrows=nrows,
                                 skiprows=lambda i: i % rows_to_skip_test !=0)
 
         for column in json_columns:
@@ -102,6 +104,12 @@ class Dataset():
 
         # Preprocessing operations go here.
         df['log_sum_revenue'] = self._make_log_sum_revenue()
+
+        # deviceCategory Preprocessing
+
+        deviceCategory_encoding = self._preprocess_deviceCategory()
+        df = df.join(deviceCategory_encoding)
+
         df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
         df['encoding_campaign'], df['encoding_isTrueDirect'], df['encoding_keyword'] = self._another_traffic_source_preprocessing()
         return df
@@ -171,12 +179,34 @@ class Dataset():
 
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_campaign'].sum(), train_gdf['encoding_isTrueDirect'].sum(), train_gdf['encoding_keyword'].sum()
-   
+
     def _make_json_converter(self, column_name):
 
         """Helper function to interpret columns in PANDAS."""
         return lambda x: {column_name: json.loads(x)}
 
+    def _preprocess_deviceCategory(self):
+        """ Creates one hot encoding columns for the device.deviceCategory
+        args:
+            self: the google analytics Dataset
+        Returns:
+            A DataFrame containing columns for each type of device found in the dataset.
+            Column names are formatted as 'is_[device name]'
+            Missing data is found in the column 'is_missing_device'
+        """
+        # Obtain list of device categories from training set
+        train_df = dataset.train.copy(deep = False)
+        deviceCategory = train_df['device.deviceCategory'].fillna('missing_device')
+
+        # Create one hot encoding
+        ohe_deviceCategory_df = pd.get_dummies(deviceCategory)
+
+        # Edit one hot encoding names to include 'is_' in front of each device type
+        oheCols = list(ohe_deviceCategory_df.columns)
+        oheCols = ['is_' + device for device in oheCols]
+        ohe_deviceCategory_df.columns = oheCols
+
+        return ohe_deviceCategory_df
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
