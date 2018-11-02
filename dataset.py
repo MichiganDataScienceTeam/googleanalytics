@@ -7,9 +7,11 @@ import json
 import argparse
 from sklearn import preprocessing
 
-_DATA_DIR = './data'
-_TRAIN = 'train.csv'
-_TEST = 'test.csv'
+_DATA_DIR = './processed_data'
+_TRAIN = 'trainminusval_visits.csv'
+_TRAIN_LABELS = 'trainminusval_revenues.csv'
+_TEST = 'val_visits.csv'
+_TEST_LABELS = 'val_revenues.csv'
 
 _NUM_ROWS_TRAIN = 903653
 _NUM_ROWS_TEST = 804684
