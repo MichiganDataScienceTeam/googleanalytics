@@ -44,7 +44,7 @@ class Dataset():
             raise ValueError('debug mode must be on to skip rows')
         rows_to_skip_train = 1
         rows_to_skip_test = 1
-        
+
         if debug and not skip_rows:
             nrows = _NUM_ROWS_DEBUG
         else:
@@ -52,12 +52,11 @@ class Dataset():
         if skip_rows:
             rows_to_skip_train = _NUM_ROWS_TRAIN // _NUM_ROWS_DEBUG
             rows_to_skip_test = _NUM_ROWS_TEST // _NUM_ROWS_DEBUG
-            
+
         type_change_columns = {"fullVisitorId": str,
                                "sessionId": str,
                                "visitId": str}
         json_columns = ['device', 'geoNetwork', 'totals', 'trafficSource']
-        date_columns = ['date', 'visitStartTime']
 
         converters = {column: self._make_json_converter(column)
                       for column in json_columns}
@@ -65,13 +64,13 @@ class Dataset():
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
                                  converters=converters,
                                  dtype=type_change_columns,
-                                 nrows=nrows, 
-                                 skiprows=lambda i: i % rows_to_skip_train !=0)
+                                 nrows=nrows,
+                                 skiprows=lambda i: i % rows_to_skip_train != 0)
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
-                                nrows=nrows, 
-                                skiprows=lambda i: i % rows_to_skip_test !=0)
+                                nrows=nrows,
+                                skiprows=lambda i: i % rows_to_skip_test != 0)
 
         for column in json_columns:
             train_column_as_df = pd.io.json.json_normalize(self.train[column])
@@ -173,7 +172,7 @@ class Dataset():
 
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_campaign'].sum(), train_gdf['encoding_isTrueDirect'].sum(), train_gdf['encoding_keyword'].sum()
-   
+
     def _make_json_converter(self, column_name):
 
         """Helper function to interpret columns in PANDAS."""

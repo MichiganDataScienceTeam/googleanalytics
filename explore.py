@@ -30,7 +30,7 @@ def main(args):
     for p, pv in zip(percentiles, percentile_values):
         print("%2.2f%% of customers spend less than: $%.2f" % (p, pv))
 
-    # Total average revenue per trafficSource 
+    # Total average revenue per trafficSource
     print("The revenue per trafficSource is: ")
     print(explore_utils.revenue_per_trafficsource(data))
 
@@ -58,7 +58,6 @@ def main(args):
     trans_by_region = explore_utils.find_transaction_by_region(data)
     print("The transaction revenues by region are: ", trans_by_region)
 
-
     # Unique Visitor Percentage
     print("%2.2f%% of all visitors to the site visit exactly once." % explore_utils.find_one_visit_percent(data))
 
@@ -66,15 +65,15 @@ def main(args):
     first_and_return_visits = explore_utils.find_return_visit_stats(data)
     first_and_return_visits = first_and_return_visits.round(2)
     print("\nStatistics of total transactions for unique visitors: \n{}\n"
-        .format(first_and_return_visits))
+          .format(first_and_return_visits))
 
     # Summary statistics for revenue generated, by device
     # First print-out includes sessions that didn't produce revenue
     # Second print-out only includes sessions that generated revenue
     print("Revenue summary statistics by device, zeroes included: \n",
           explore_utils.find_revenue_summary_statistics_for_devices(data, True))
-    print ("Revenue summary statistics by device, zeroes excluded: \n",
-           explore_utils.find_revenue_summary_statistics_for_devices(data, False))
+    print("Revenue summary statistics by device, zeroes excluded: \n",
+          explore_utils.find_revenue_summary_statistics_for_devices(data, False))
 
     # Prints out what percent of revenue generating sessions were accessed via a particular device
     print("Percent of revenue generating sessions that used a particular device: \n",
@@ -89,6 +88,7 @@ def main(args):
     # generated revenue
     print("Percent of total sessions using a particular device that generated revenue: \n",
           explore_utils.find_percent_device_uses_generating_revenue(data))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

@@ -16,7 +16,7 @@ def revenue_per_trafficsource(dataset):
     train_df = dataset.train.copy()
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float)
     train_df['source'] = train_df['trafficSource.source']
-    train_df = train_df[['revenue','source']]
+    train_df = train_df[['revenue', 'source']]
     train_df = train_df.fillna(0)
     result = train_df.groupby('source')['revenue'].mean()/10000
     return result
@@ -43,23 +43,23 @@ def find_most_visit(dataset):
 
 def find_fraction_of_transactions_with_non_zero_revenue(dataset):
     """Find the fraction of transactions in the google dataset with non-zero revenue.(only in train set)
-    
+
     args:
         dataset (Dataset): the google analytics dataset.
-        
+
     returns:
             The fraction of transactions with non-zero revenue.
     """
-    
+
     train_df = dataset.train.copy()
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float)
-    
+
     # The number of transactions that have non-zero revenue.
     num_transactions_non_zero = np.count_nonzero(~np.isnan(train_df['revenue']))
-    
+
     # The total number of transactions.
     total_num_transactions = len(train_df)
-    
+
     return(num_transactions_non_zero / total_num_transactions)
 
 
@@ -101,6 +101,7 @@ def find_most_common_traffic_sources(dataset, num=5):
     """
     return dataset.train['trafficSource.source'].value_counts().head(num)
 
+
 def find_one_visit_percent(dataset):
     """Finds the percent of visitors to the store that only visit once
 
@@ -113,17 +114,18 @@ def find_one_visit_percent(dataset):
     """
     data = dataset.train.copy()
 
-    #gets DataFrame of each visitor's total number of visits
+    # gets DataFrame of each visitor's total number of visits
     total_visits = data.groupby("fullVisitorId")['visitNumber'].sum()
 
-    #counts all instances where the total visit number is exactly 1
+    # counts all instances where the total visit number is exactly 1
     one_visit_count = np.sum(total_visits == 1)
 
-    #divides by the total number of data points inspected
+    # divides by the total number of data points inspected
     percent_one_time_visitors = (100.*(one_visit_count))/(total_visits.size)
 
-    #returns this percent
+    # returns this percent
     return percent_one_time_visitors
+
 
 def find_channel_grouping_revenue(dataset):
     """
@@ -142,6 +144,7 @@ def find_channel_grouping_revenue(dataset):
     means = df.groupby('fullVisitorId').first().groupby('channelGrouping')['totals.transactionRevenue'].mean() / 10000
     return counts, means
 
+
 def find_transaction_by_region(data):
     """ Find the average transaction revenue by region
 
@@ -157,9 +160,10 @@ def find_transaction_by_region(data):
     data['rev'] = data['totals.transactionRevenue'].fillna(0).astype(float)
     avg = data.groupby('geoNetwork.region')['rev'].mean()
     avg = pd.DataFrame(avg)
-    new_df = avg[avg['rev']>0]
+    new_df = avg[avg['rev'] > 0]
     new_df.columns = ['Transaction']
     return new_df.sort_values(by=['Transaction'])
+
 
 def find_return_visit_stats(dataset):
     """Find the statistics of total transactions for returning visitors
@@ -167,18 +171,18 @@ def find_return_visit_stats(dataset):
     args:
         dataset (Dataset): the google analytics dataset.
 
-    returns:    
+    returns:
         Dataframe of transaction statistics for first time visitors versus return visitors
     """
 
     train_df = dataset.train.copy()
     train_df['revenue'] = train_df['totals.transactionRevenue'].astype(float).fillna(0) / 10000
     group_df = (train_df[['fullVisitorId', 'visitNumber', 'revenue']]
-          .groupby('fullVisitorId', as_index=False)
-          .agg({'visitNumber': 'max', 'revenue': 'sum'}))
+                .groupby('fullVisitorId', as_index=False)
+                .agg({'visitNumber': 'max', 'revenue': 'sum'}))
     first_stats = (group_df[group_df['visitNumber'] == 1]['revenue']
-                  .describe(percentiles=[.95, .99, .999, .9999])
-                  .rename('First Time Visitor'))
+                   .describe(percentiles=[.95, .99, .999, .9999])
+                   .rename('First Time Visitor'))
     return_stats = (group_df[group_df['visitNumber'] != 1]['revenue']
                     .describe(percentiles=[.95, .99, .999, .9999])
                     .rename('Return Visitor'))
@@ -213,10 +217,10 @@ def find_revenue_summary_statistics_for_devices(dataset, includeZeroes):
     sd = train_df.groupby('deviceCategory')['revenue'].std()
 
     sum_stat = pd.DataFrame({'q1': q1,
-                            'median': median,
-                            'mean': mean,
-                            'q3': q3,
-                            'sd': sd})
+                             'median': median,
+                             'mean': mean,
+                             'q3': q3,
+                             'sd': sd})
     sum_stat.reset_index()
 
     return sum_stat
@@ -241,15 +245,14 @@ def find_percent_sessionIds_using_certain_device(dataset):
     train_df['deviceCategory'] = train_df['device.deviceCategory']
     counts = train_df.groupby('deviceCategory')['deviceCategory'].count()
     counts_df = pd.DataFrame(counts)
-    counts_df = counts_df = counts_df.rename(index = str, columns = {'deviceCategory':'count'})
+    counts_df = counts_df = counts_df.rename(index=str, columns={'deviceCategory': 'count'})
     counts_df['percent'] = (counts_df['count'] / counts_df['count'].sum()) * 100.0
-    percent_df = counts_df.drop('count', axis = 1).reset_index()
+    percent_df = counts_df.drop('count', axis=1).reset_index()
 
     return percent_df
 
 
 def find_percent_of_total_revenue_by_device(dataset):
-
     """Finds percent of total revenue generated that is attributable to
     particular devices.
 
@@ -267,13 +270,13 @@ def find_percent_of_total_revenue_by_device(dataset):
     train_df['deviceCategory'] = train_df['device.deviceCategory']
     revenue_df = pd.DataFrame(train_df.groupby('deviceCategory')['revenue'].sum())
     revenue_df['percent'] = revenue_df['revenue'] / revenue_df['revenue'].sum()
-    percent_df = revenue_df.drop('revenue', axis = 1).reset_index()
+    percent_df = revenue_df.drop('revenue', axis=1).reset_index()
     percent_df['percent'] = percent_df['percent'] * 100
 
     return percent_df
 
-def find_percent_device_uses_generating_revenue(dataset):
 
+def find_percent_device_uses_generating_revenue(dataset):
     """Finds percent of sessions using a particular devices
     that generated revenue.
 
@@ -299,8 +302,7 @@ def find_percent_device_uses_generating_revenue(dataset):
     nonGenRev_df = pd.DataFrame(nonGenRev).reset_index()
 
     genRev_df['percent'] = genRev_df['generatingRevenue'] / (nonGenRev_df['notGeneratingRevenue'] + genRev_df['generatingRevenue'])
-    percent_df = genRev_df.drop('generatingRevenue', axis = 1)
+    percent_df = genRev_df.drop('generatingRevenue', axis=1)
     percent_df['percent'] = percent_df['percent'] * 100
 
     return percent_df
-

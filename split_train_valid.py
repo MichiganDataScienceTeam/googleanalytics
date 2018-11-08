@@ -26,6 +26,7 @@ _TEST_END_DATE = np.datetime64('2018-10-16')
 
 _TRAIN_FRAC = 0.80
 
+
 def main(args):
     """Split the training validation data into two files.
 
@@ -112,8 +113,8 @@ def main(args):
         )
 
     visitors_df = visitors_df.set_index('fullVisitorId')
-    visitors_train = visitors_df.index[visitors_df['split']=='train']
-    visitors_valid = visitors_df.index[visitors_df['split']=='valid']
+    visitors_train = visitors_df.index[visitors_df['split'] == 'train']
+    visitors_valid = visitors_df.index[visitors_df['split'] == 'valid']
 
     print('Number of visitors in train minus val set:', len(visitors_train))
     print('Number of visitors in val set:', len(visitors_valid))
@@ -212,6 +213,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--fresh_split', action='store_true',
         help='Whether to create a new split.')
-    args=parser.parse_args()
+    args = parser.parse_args()
 
     main(args)
