@@ -67,11 +67,15 @@ class Dataset():
                                  dtype=type_change_columns,
                                  nrows=nrows, 
                                  skiprows=lambda i: i % rows_to_skip_train !=0)
+        self.train_labels = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN_LABELS),
+                                        dtype={"fullVisitorId": str})
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
                                 nrows=nrows, 
                                 skiprows=lambda i: i % rows_to_skip_test !=0)
+        self.test_labels = pd.read_csv(os.path.join(_DATA_DIR, _TEST_LABELS),
+                                       dtype={"fullVisitorId": str})
 
         for column in json_columns:
             train_column_as_df = pd.io.json.json_normalize(self.train[column])
@@ -83,32 +87,37 @@ class Dataset():
                                         right_index=True,
                                         left_index=True)
 
-    def preprocess(self, do_val_split=False):
+
+    def preprocess(self, do_val_split=True):
         """Preprocess the dataset.
 
         Args:
-           do_val_split (bool): Whether to do a validation split. Not
-              yet implemented.
+           do_val_split (bool): Whether to preprocess val.
 
         Returns:
            A preprocessed version of the training set with only
            numerical data for ML models.
         """
 
+        dfs = [(self.train, self.train_labels)]
+
         if do_val_split:
-            raise NotImplementedError(
-                'Validation split not yet implemented.')
+            dfs.append((self.test, self.test_labels))
 
-        df = pd.DataFrame({'visitorId': self.train['fullVisitorId'].unique()})
-        df.set_index('visitorId', inplace=True)
+        dfs_out = []
+        for df, df_labels in dfs:
+            df_out = pd.DataFrame({'visitorId': df['fullVisitorId'].unique()})
+            df_out.set_index('visitorId', inplace=True)
 
-        # Preprocessing operations go here.
-        df['log_sum_revenue'] = self._make_log_sum_revenue()
-        df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
-        df['encoding_campaign'], df['encoding_isTrueDirect'], df['encoding_keyword'] = self._another_traffic_source_preprocessing()
-        return df
+            # Preprocessing operations go here.
+            df_out['log_sum_revenue'] = self._make_log_sum_revenue(df)
+            df_out['encoding_medium'], df_out['encoding_referralPath'], df_out['encoding_source'] = self._make_traffic_source_preprocessing(df)
+            df_out['encoding_campaign'], df_out['encoding_isTrueDirect'], df_out['encoding_keyword'] = self._another_traffic_source_preprocessing(df)
+            dfs_out.append((df_out, df_labels))
 
-    def _make_log_sum_revenue(self):
+        return dfs_out
+
+    def _make_log_sum_revenue(self, df):
         """Create the log_sum_revenue column.
 
         Returns:
@@ -117,7 +126,7 @@ class Dataset():
         """
 
         # Get revenue and fill NaN with zero
-        train_df = self.train.copy(deep=False)
+        train_df = df.copy(deep=False)
         train_df['revenue'] = train_df['totals.transactionRevenue']
         train_df['revenue'] = train_df['revenue'].astype('float').fillna(0)
 
@@ -127,7 +136,7 @@ class Dataset():
         train_revenue_log_sum = (train_revenue_sum + 1).apply(np.log)
         return train_revenue_log_sum
 
-    def _make_traffic_source_preprocessing(self):
+    def _make_traffic_source_preprocessing(self, df):
         """Create the encoding columns of trafficSource.medium,trafficSource.referralPath, trafficSource.source.
 
         Returns:
@@ -135,7 +144,7 @@ class Dataset():
            training set.
         """
         # Get the trafficSource.medium,trafficSource.referralPath, trafficSource.source.
-        train_df = self.train.copy(deep=False)
+        train_df = df.copy(deep=False)
         le = preprocessing.LabelEncoder()
         to_encode = ['medium', 'referralPath', 'source']
         for item in to_encode:
@@ -148,7 +157,7 @@ class Dataset():
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_medium'].sum(), train_gdf['encoding_referralPath'].sum(), train_gdf['encoding_source'].sum()
 
-    def _another_traffic_source_preprocessing(self):
+    def _another_traffic_source_preprocessing(self, df):
         """Create the encoding columns of trafficSource.campaign,trafficSource.isTrueDirect, trafficSource.keyword.
 
         Returns:
@@ -156,7 +165,7 @@ class Dataset():
            training set.
         """
         # For 'campaign' & 'keyword'
-        train_df = self.train.copy(deep=False)
+        train_df = df.copy(deep=False)
         le = preprocessing.LabelEncoder()
         to_encode = ['campaign', 'keyword']
         for item in to_encode:
