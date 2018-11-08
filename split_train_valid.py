@@ -145,6 +145,8 @@ def main(args):
         {'index': 'sumRevenue'})
     sum_revenue_val = sum_revenue_val.reset_index().rename(
         {'index': 'sumRevenue'})
+    all_zeros_val = sum_revenue_val.copy()
+    all_zeros_val['transactionRevenue'] = 0
 
     print('Saving...')
     df_trainminusval.to_csv(
@@ -161,6 +163,9 @@ def main(args):
         index=False)
     sum_revenue_val.to_csv(
         os.path.join(args.output_dir, args.output_valid_label_file),
+        index=False)
+    all_zeros_val.to_csv(
+        os.path.join(args.output_dir, args.output_valid_sample_predictions_file),
         index=False)
 
     print('Done!')
@@ -199,6 +204,10 @@ if __name__ == '__main__':
         type=str)
     parser.add_argument(
         '--output_valid_label_file', default='val_revenues.csv',
+        help='Destination file for new validation set.',
+        type=str)
+    parser.add_argument(
+        '--output_valid_sample_predictions_file', default='val_sample_predictions.csv',
         help='Destination file for new validation set.',
         type=str)
     parser.add_argument(
