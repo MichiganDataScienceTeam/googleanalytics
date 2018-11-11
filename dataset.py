@@ -192,19 +192,16 @@ class Dataset():
             Column names are formatted as 'is_[device name]'
             Missing data is found in the column 'is_missing_device'
         """
+
         # Obtain list of device categories from training set
-        train_df = dataset.train.copy(deep = False)
-        deviceCategory = train_df['device.deviceCategory'].fillna('missing_device')
+        train_df = self.train.copy(deep = False).set_index('fullVisitorId')
+        deviceCategory = train_df['device.deviceCategory'].fillna('missing')
 
         # Create one hot encoding
-        ohe_deviceCategory_df = pd.get_dummies(deviceCategory)
-
-        # Edit one hot encoding names to include 'is_' in front of each device type
-        oheCols = list(ohe_deviceCategory_df.columns)
-        oheCols = ['is_' + device for device in oheCols]
-        ohe_deviceCategory_df.columns = oheCols
+        ohe_deviceCategory_df = pd.get_dummies(deviceCategory).add_prefix('deviceCategory.is_').groupby('fullVisitorId').max()
 
         return ohe_deviceCategory_df
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
