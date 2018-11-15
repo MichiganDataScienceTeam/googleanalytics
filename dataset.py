@@ -44,7 +44,7 @@ class Dataset():
             raise ValueError('debug mode must be on to skip rows')
         rows_to_skip_train = 1
         rows_to_skip_test = 1
-        
+
         if debug and not skip_rows:
             nrows = _NUM_ROWS_DEBUG
         else:
@@ -52,7 +52,7 @@ class Dataset():
         if skip_rows:
             rows_to_skip_train = _NUM_ROWS_TRAIN // _NUM_ROWS_DEBUG
             rows_to_skip_test = _NUM_ROWS_TEST // _NUM_ROWS_DEBUG
-            
+
         type_change_columns = {"fullVisitorId": str,
                                "sessionId": str,
                                "visitId": str}
@@ -65,14 +65,14 @@ class Dataset():
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
                                  converters=converters,
                                  dtype=type_change_columns,
-                                 nrows=nrows, 
+                                 nrows=nrows,
                                  skiprows=lambda i: i % rows_to_skip_train !=0)
         self.train_labels = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN_LABELS),
                                         dtype={"fullVisitorId": str})
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
-                                nrows=nrows, 
+                                nrows=nrows,
                                 skiprows=lambda i: i % rows_to_skip_test !=0)
         self.test_labels = pd.read_csv(os.path.join(_DATA_DIR, _TEST_LABELS),
                                        dtype={"fullVisitorId": str})
@@ -113,8 +113,11 @@ class Dataset():
             df_out['log_sum_revenue'] = self._make_log_sum_revenue(df)
             df_out['encoding_medium'], df_out['encoding_referralPath'], df_out['encoding_source'] = self._make_traffic_source_preprocessing(df)
             df_out['encoding_campaign'], df_out['encoding_isTrueDirect'], df_out['encoding_keyword'] = self._another_traffic_source_preprocessing(df)
+            # deviceCategory Preprocessing
+            deviceCategory_encoding = self._preprocess_deviceCategory()
+            df_out = df_out.join(deviceCategory_encoding)
             dfs_out.append((df_out, df_labels))
-
+            
         return dfs_out
 
     def _make_log_sum_revenue(self, df):
@@ -182,11 +185,30 @@ class Dataset():
 
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_campaign'].sum(), train_gdf['encoding_isTrueDirect'].sum(), train_gdf['encoding_keyword'].sum()
-   
+
     def _make_json_converter(self, column_name):
 
         """Helper function to interpret columns in PANDAS."""
         return lambda x: {column_name: json.loads(x)}
+
+    def _preprocess_deviceCategory(self):
+        """ Creates one hot encoding columns for the device.deviceCategory
+        args:
+            self: the google analytics Dataset
+        Returns:
+            A DataFrame containing columns for each type of device found in the dataset.
+            Column names are formatted as 'is_[device name]'
+            Missing data is found in the column 'is_missing_device'
+        """
+
+        # Obtain list of device categories from training set
+        train_df = self.train.copy(deep = False).set_index('fullVisitorId')
+        deviceCategory = train_df['device.deviceCategory'].fillna('missing')
+
+        # Create one hot encoding
+        ohe_deviceCategory_df = pd.get_dummies(deviceCategory).add_prefix('deviceCategory.is_').groupby('fullVisitorId').max()
+
+        return ohe_deviceCategory_df
 
 
 if __name__ == '__main__':
