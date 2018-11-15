@@ -1,1 +1,1 @@
-Place `train.csv`, `test.csv`, and `sample_submission.csv` here.
+Place `train.csv`, `test.csv`, `sample_submission.csv`, and `split_ids.csv` here.
