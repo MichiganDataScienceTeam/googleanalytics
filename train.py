@@ -8,11 +8,16 @@ def main(args):
     data = dataset.Dataset(debug=args.debug)
 
     print('Preprocessing...')
-    train_df = data.preprocess()
+    train_dfs, val_dfs = data.preprocess(do_val_split=True)
+    train_df, train_labels = train_dfs
+    val_df, val_labels = val_dfs
 
-    print('Number of rows:', len(train_df))
-    print('Number of columns:', len(train_df.columns))
-    print(train_df.describe())
+    print('Number of rows (train):', len(train_df))
+    print('Number of rows (val):  ', len(val_df))
+    print('Number of columns (train):', len(train_df.columns))
+    print('Number of columns (val):  ', len(val_df.columns))
+
+    # Model training goes here!
 
 
 if __name__ == '__main__':
