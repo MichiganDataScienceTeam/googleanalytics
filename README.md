@@ -46,7 +46,7 @@ pip install -r requirements.txt
 python split_train_valid.py
 ```
 
-7. Make sure the dataset is in the correct place and run the exploration code. Note: removing the `--debug` flag will
+8. Make sure the dataset is in the correct place and run the exploration code. Note: removing the `--debug` flag will
 cause the full dataset to be loaded, which may take a long time on
 your machine.
 ```
