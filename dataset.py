@@ -113,11 +113,10 @@ class Dataset():
             df_out['log_sum_revenue'] = self._make_log_sum_revenue(df)
             df_out['encoding_medium'], df_out['encoding_referralPath'], df_out['encoding_source'] = self._make_traffic_source_preprocessing(df)
             df_out['encoding_campaign'], df_out['encoding_isTrueDirect'], df_out['encoding_keyword'] = self._another_traffic_source_preprocessing(df)
-            # deviceCategory Preprocessing
-            deviceCategory_encoding = self._preprocess_deviceCategory()
-            df_out = df_out.join(deviceCategory_encoding)
+            df_out = df_out.join(self._make_browser_preprocessing())
+            df_out = df_out.join(self._preprocess_deviceCategory())
             dfs_out.append((df_out, df_labels))
-            
+
         return dfs_out
 
     def _make_log_sum_revenue(self, df):
@@ -185,6 +184,38 @@ class Dataset():
 
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_campaign'].sum(), train_gdf['encoding_isTrueDirect'].sum(), train_gdf['encoding_keyword'].sum()
+
+    def _make_browser_preprocessing(self):
+        """Creates the encoding columns of device.browser, device.browserSize, device.browserVersion
+
+        Returns:
+            A Dataframe containing one hot encoded columns for unique values of device.browser,
+            device.browserSize, device.browserVersion
+
+        """
+        train_df = self.train.copy(deep=False)
+        browser = self._one_hot('device.browser')
+        browserSize = self._one_hot('device.browserSize')
+        browserVersion = self._one_hot('device.browserVersion')
+
+        return pd.concat([browser,browserSize,browserVersion],axis=1,sort=True)
+
+    def _one_hot(self, key):
+        """Creates one hot encodings for categorical variables
+
+        Args:
+            key (string): name of column in dataframe to one hot encode
+
+        Returns:
+            A Dataframe containing one hot encoding of categorical variable, grouped by
+            visitor ID. Columns are unique values of variable.
+        """
+        train_df = self.train.copy(deep=False)
+        one_hot = pd.get_dummies(train_df[key],drop_first=True)
+        one_hot.columns=[key+'_'+col for col in one_hot.columns.values]
+        train_df = pd.concat([train_df,one_hot],axis=1,sort=True)
+        train_dfg = train_df.groupby('fullVisitorId')
+        return train_dfg[one_hot.columns.values].sum()
 
     def _make_json_converter(self, column_name):
 
