@@ -6,6 +6,7 @@ import json
 
 import pandas as pd
 import numpy as np
+import random
 
 # August 1 - October 15
 _TRAIN_START_DATE = np.datetime64('2016-06-01')
@@ -54,13 +55,13 @@ def main(args):
     users that appeared during the training period.
 
     """
-
-    print('Lading train csv...')
+    
+    print('Loading train csv...')
     train = pd.read_csv(
         os.path.join(args.data_dir, args.input_train_file),
         dtype=str)
 
-    print('Lading test csv...')
+    print('Loading test csv...')
     test = pd.read_csv(
         os.path.join(args.data_dir, args.input_test_file),
         dtype=str)
@@ -84,8 +85,14 @@ def main(args):
     print('Unique visitors in train set: ', len(visitors))
     print('Unique visitors in test set: ', len(visitors_test))
 
+    # p is the approximation of percent of dataset to split
+    p = args.percent_split/100
+    print('Splitting percent of users: ', p)
+
     if args.fresh_split:
         print('Choosing new train/val split...')
+
+        visitors = np.random.choice(visitors,int(len(visitors)*p),False)
 
         n_visitors = len(visitors)
         n_train = int(n_visitors * _TRAIN_FRAC)
@@ -105,10 +112,13 @@ def main(args):
         )
 
     else:
+        # p is the approximation of percent of dataset to split
+        p = args.percent_split/100
         print('Loading split from csv...')
         visitors_df = pd.read_csv(
             os.path.join(args.data_dir, args.split_file),
             dtype=str,
+            skiprows=lambda i: i>0 and random.random() > p
         )
 
     visitors_df = visitors_df.set_index('fullVisitorId')
@@ -221,6 +231,11 @@ if __name__ == '__main__':
     parser.add_argument(
         '--fresh_split', action='store_true',
         help='Whether to create a new split.')
+    parser.add_argument(
+        '--percent_split', default=100,
+        help='Percent of users to include in split csv (0,100]',
+        type=int
+    )
     args=parser.parse_args()
 
     main(args)
