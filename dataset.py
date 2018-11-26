@@ -6,10 +6,13 @@ import numpy as np
 import json
 import argparse
 from sklearn import preprocessing
+from sklearn import impute
 
-_DATA_DIR = './data'
-_TRAIN = 'train.csv'
-_TEST = 'test.csv'
+_DATA_DIR = './processed_data'
+_TRAIN = 'trainminusval_visits.csv'
+_TRAIN_LABELS = 'trainminusval_revenues.csv'
+_TEST = 'val_visits.csv'
+_TEST_LABELS = 'val_revenues.csv'
 
 _NUM_ROWS_TRAIN = 903653
 _NUM_ROWS_TEST = 804684
@@ -42,7 +45,7 @@ class Dataset():
             raise ValueError('debug mode must be on to skip rows')
         rows_to_skip_train = 1
         rows_to_skip_test = 1
-        
+
         if debug and not skip_rows:
             nrows = _NUM_ROWS_DEBUG
         else:
@@ -50,7 +53,7 @@ class Dataset():
         if skip_rows:
             rows_to_skip_train = _NUM_ROWS_TRAIN // _NUM_ROWS_DEBUG
             rows_to_skip_test = _NUM_ROWS_TEST // _NUM_ROWS_DEBUG
-            
+
         type_change_columns = {"fullVisitorId": str,
                                "sessionId": str,
                                "visitId": str}
@@ -63,13 +66,17 @@ class Dataset():
         self.train = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN),
                                  converters=converters,
                                  dtype=type_change_columns,
-                                 nrows=nrows, 
+                                 nrows=nrows,
                                  skiprows=lambda i: i % rows_to_skip_train !=0)
+        self.train_labels = pd.read_csv(os.path.join(_DATA_DIR, _TRAIN_LABELS),
+                                        dtype={"fullVisitorId": str})
         self.test = pd.read_csv(os.path.join(_DATA_DIR, _TEST),
                                 converters=converters,
                                 dtype=type_change_columns,
-                                nrows=nrows, 
+                                nrows=nrows,
                                 skiprows=lambda i: i % rows_to_skip_test !=0)
+        self.test_labels = pd.read_csv(os.path.join(_DATA_DIR, _TEST_LABELS),
+                                       dtype={"fullVisitorId": str})
 
         for column in json_columns:
             train_column_as_df = pd.io.json.json_normalize(self.train[column])
@@ -81,45 +88,55 @@ class Dataset():
                                         right_index=True,
                                         left_index=True)
 
-    def preprocess(self, do_val_split=False):
+
+    def preprocess(self, do_val_split=True):
         """Preprocess the dataset.
 
         Args:
-           do_val_split (bool): Whether to do a validation split. Not
-              yet implemented.
+           do_val_split (bool): Whether to preprocess val.
 
         Returns:
            A preprocessed version of the training set with only
            numerical data for ML models.
         """
 
+        dfs = [(self.train, self.train_labels)]
+
         if do_val_split:
-            raise NotImplementedError(
-                'Validation split not yet implemented.')
+            dfs.append((self.test, self.test_labels))
 
-        df = pd.DataFrame({'visitorId': self.train['fullVisitorId'].unique()})
-        df.set_index('visitorId', inplace=True)
+        dfs_out = []
+        for df, df_labels in dfs:
+            df_out = pd.DataFrame({'visitorId': df['fullVisitorId'].unique()})
+            df_out.set_index('visitorId', inplace=True)
+            # Preprocessing operations go here.
+            df_out['log_sum_revenue'] = self._make_log_sum_revenue(df)
+            df_out['encoding_medium'], df_out['encoding_referralPath'], df_out['encoding_source'] = self._make_traffic_source_preprocessing(df)
+            df_out['encoding_campaign'], df_out['encoding_isTrueDirect'], df_out['encoding_keyword'] = self._another_traffic_source_preprocessing(df)
+            df_out = df_out.join(self._make_browser_preprocessing(df))
+            df_out = df_out.join(self._preprocess_deviceCategory(df))
+            df_out['geoNetwork.first_x_longitude'], df_out['geoNetwork.last_x_longitude'], df_out['geoNetwork.first_y_longitude'], df_out['geoNetwork.last_y_longitude'] = self._preprocess_longitudes_and_latitudes(df)
+            df_out = df_out.join(self._preprocess_country(df))
+            df_out = df_out.join(self._preprocess_metro(df))
+            dfs_out.append((df_out, df_labels))
 
-        # Preprocessing operations go here.
-        df['log_sum_revenue'] = self._make_log_sum_revenue()
-        df['encoding_medium'], df['encoding_referralPath'], df['encoding_source'] = self._make_traffic_source_preprocessing()
-        df['geoNetwork.first_x_longitude'], df['geoNetwork.last_x_longitude'], df['geoNetwork.first_y_longitude'], df['geoNetwork.last_y_longitude'] = self._preprocess_longitudes_and_latitudes()
-        
+        return dfs_out
+
+    def _preprocess_country(self, df):
         # One-hot encode the countries.
         new_country_col = pd.Series(df['geoNetwork.country'])
         country_dummies_df = pd.get_dummies(new_country_col)
-        
+
+        return country_dummies_df
+
+    def _preprocess_metro(self, df):
         # One-hot encode the metropolitan areas.
         new_metro_col = pd.Series(df['geoNetwork.metro'])
         metro_dummies_df = pd.get_dummies(new_metro_col)
-        
-        # Merge the dummy dataframes with the main training dataframe.
-        df = df.join(country_dummies_df)
-        df = df.join(metro_dummies_df)
-        
-        return df
-    
-    def _preprocess_longitudes_and_latitudes(self):
+
+        return metro_dummies_df
+
+    def _preprocess_longitudes_and_latitudes(self, df):
         """Preprocesses the columns u'geoNetwork.latitude',
            u'geoNetwork.longitude', and u'geoNetwork.metro' in the dataset train.csv.
            Creates columns of the first and last x and y longitudes and latitudes (4 columns) of each visitor.
@@ -129,12 +146,12 @@ class Dataset():
                The training dataframe (indexed by visitor) with the added longitude/latitude columns.
         """
         
-        train_df = self.train.copy(deep=False)
+        train_df = df.copy(deep=False)
         
         # Preprocess the numeric columns. Group by visitor and standardize, impute missing values, and normalize
         
         # Impute the missing values in latitudes and longitudes.
-        imp = SimpleImputer(missing_values='not available in demo dataset', strategy='mean')
+        imp = impute.SimpleImputer(missing_values='not available in demo dataset', strategy='mean')
         train_df['imputed_latitude'] = imp.transform(train_df['geoNetwork.latitude'])
         train_df['imputed_longitude'] = imp.transform(train_df['geoNetwork.longitude'])
         
@@ -171,7 +188,7 @@ class Dataset():
         
         return train_gdf['x_longitude'].first(), train_gdf['x_longitude'].last(), train_gdf['y_latitude'].first(), train_gdf['y_latitude'].last()
         
-    def _make_log_sum_revenue(self):
+    def _make_log_sum_revenue(self, df):
         """Create the log_sum_revenue column.
 
         Returns:
@@ -180,7 +197,7 @@ class Dataset():
         """
 
         # Get revenue and fill NaN with zero
-        train_df = self.train.copy(deep=False)
+        train_df = df.copy(deep=False)
         train_df['revenue'] = train_df['totals.transactionRevenue']
         train_df['revenue'] = train_df['revenue'].astype('float').fillna(0)
 
@@ -190,7 +207,7 @@ class Dataset():
         train_revenue_log_sum = (train_revenue_sum + 1).apply(np.log)
         return train_revenue_log_sum
 
-    def _make_traffic_source_preprocessing(self):
+    def _make_traffic_source_preprocessing(self, df):
         """Create the encoding columns of trafficSource.medium,trafficSource.referralPath, trafficSource.source.
 
         Returns:
@@ -198,7 +215,7 @@ class Dataset():
            training set.
         """
         # Get the trafficSource.medium,trafficSource.referralPath, trafficSource.source.
-        train_df = self.train.copy(deep=False)
+        train_df = df.copy(deep=False)
         le = preprocessing.LabelEncoder()
         to_encode = ['medium', 'referralPath', 'source']
         for item in to_encode:
@@ -211,10 +228,87 @@ class Dataset():
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_medium'].sum(), train_gdf['encoding_referralPath'].sum(), train_gdf['encoding_source'].sum()
 
+    def _another_traffic_source_preprocessing(self, df):
+        """Create the encoding columns of trafficSource.campaign,trafficSource.isTrueDirect, trafficSource.keyword.
+
+        Returns:
+           A DataFrame containing three columns, encoding_campaign, encoding_isTrueDirect, encoding_keyword, for the
+           training set.
+        """
+        # For 'campaign' & 'keyword'
+        train_df = df.copy(deep=False)
+        le = preprocessing.LabelEncoder()
+        to_encode = ['campaign', 'keyword']
+        for item in to_encode:
+            item_key = 'trafficSource.' + item
+            encoding_key = 'encoding_' + item
+            train_df[item_key] = train_df[item_key].fillna("missing")
+            fitting_label = train_df[item_key].unique()
+            le.fit(fitting_label)
+            train_df[encoding_key] = le.transform(train_df[item_key])
+        # Now for 'isTrueDirect'
+        item_key = 'trafficSource.isTrueDirect'
+        encoding_key = 'encoding_isTrueDirect'
+        train_df[encoding_key] = train_df[item_key].fillna(False)
+
+        train_gdf = train_df.groupby('fullVisitorId')
+        return train_gdf['encoding_campaign'].sum(), train_gdf['encoding_isTrueDirect'].sum(), train_gdf['encoding_keyword'].sum()
+
+    def _make_browser_preprocessing(self, df):
+        """Creates the encoding columns of device.browser, device.browserSize, device.browserVersion
+
+        Returns:
+            A Dataframe containing one hot encoded columns for unique values of device.browser,
+            device.browserSize, device.browserVersion
+
+        """
+        train_df = df.copy(deep=False)
+        browser = self._one_hot('device.browser')
+        browserSize = self._one_hot('device.browserSize')
+        browserVersion = self._one_hot('device.browserVersion')
+
+        return pd.concat([browser,browserSize,browserVersion],axis=1,sort=True)
+
+    def _one_hot(self, key):
+        """Creates one hot encodings for categorical variables
+
+        Args:
+            key (string): name of column in dataframe to one hot encode
+
+        Returns:
+            A Dataframe containing one hot encoding of categorical variable, grouped by
+            visitor ID. Columns are unique values of variable.
+        """
+        train_df = self.train.copy(deep=False)
+        one_hot = pd.get_dummies(train_df[key],drop_first=True)
+        one_hot.columns=[key+'_'+col for col in one_hot.columns.values]
+        train_df = pd.concat([train_df,one_hot],axis=1,sort=True)
+        train_dfg = train_df.groupby('fullVisitorId')
+        return train_dfg[one_hot.columns.values].sum()
+
     def _make_json_converter(self, column_name):
 
         """Helper function to interpret columns in PANDAS."""
         return lambda x: {column_name: json.loads(x)}
+
+    def _preprocess_deviceCategory(self, df):
+        """ Creates one hot encoding columns for the device.deviceCategory
+        args:
+            self: the google analytics Dataset
+        Returns:
+            A DataFrame containing columns for each type of device found in the dataset.
+            Column names are formatted as 'is_[device name]'
+            Missing data is found in the column 'is_missing_device'
+        """
+
+        # Obtain list of device categories from training set
+        train_df = df.copy(deep = False).set_index('fullVisitorId')
+        deviceCategory = train_df['device.deviceCategory'].fillna('missing')
+
+        # Create one hot encoding
+        ohe_deviceCategory_df = pd.get_dummies(deviceCategory).add_prefix('deviceCategory.is_').groupby('fullVisitorId').max()
+
+        return ohe_deviceCategory_df
 
 
 if __name__ == '__main__':

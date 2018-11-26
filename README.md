@@ -41,7 +41,12 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
-7. Make sure the dataset is in the correct place and run the exploration code. Note: removing the `--debug` flag will
+7. Process the train/val split.
+```
+python split_train_valid.py
+```
+
+8. Make sure the dataset is in the correct place and run the exploration code. Note: removing the `--debug` flag will
 cause the full dataset to be loaded, which may take a long time on
 your machine.
 ```
@@ -57,3 +62,4 @@ python explore.py --debug
 3. Assign yourself to an [issue](https://github.com/MichiganDataScienceTeam/googleanalytics/issues)
 4. Create a branch and write your code
 5. Submit a pull request when you are done!
+
