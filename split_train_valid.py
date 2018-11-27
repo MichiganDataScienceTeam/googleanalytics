@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 
 import os
 import argparse
@@ -85,12 +85,12 @@ def main(args):
     print('Unique visitors in train set: ', len(visitors))
     print('Unique visitors in test set: ', len(visitors_test))
 
-    # p is the approximation of percent of dataset to split
-    p = args.percent_split/100
-    print('Splitting percent of users: ', p)
-
     if args.fresh_split:
         print('Choosing new train/val split...')
+
+        # p is the approximation of percent of dataset to split
+        p = args.percent_split/100
+        print('Splitting percent of users: ', p)
 
         visitors = np.random.choice(visitors,int(len(visitors)*p),False)
 
@@ -112,13 +112,10 @@ def main(args):
         )
 
     else:
-        # p is the approximation of percent of dataset to split
-        p = args.percent_split/100
         print('Loading split from csv...')
         visitors_df = pd.read_csv(
             os.path.join(args.data_dir, args.split_file),
-            dtype=str,
-            skiprows=lambda i: i>0 and random.random() > p
+            dtype=str
         )
 
     visitors_df = visitors_df.set_index('fullVisitorId')
