@@ -5,8 +5,6 @@ import pandas as pd
 import numpy as np
 import json
 import argparse
-from sklearn import preprocessing
-from sklearn import impute
 
 _DATA_DIR = './processed_data'
 _TRAIN = 'trainminusval_visits.csv'
@@ -18,7 +16,6 @@ _NUM_ROWS_TRAIN = 903653
 _NUM_ROWS_TEST = 804684
 
 _NUM_ROWS_DEBUG = 1000
-
 
 class Dataset():
     """The Google Analytics dataset."""
@@ -115,7 +112,7 @@ class Dataset():
             df_out['encoding_campaign'], df_out['encoding_isTrueDirect'], df_out['encoding_keyword'] = self._another_traffic_source_preprocessing(df)
             df_out = df_out.join(self._make_browser_preprocessing(df))
             df_out = df_out.join(self._preprocess_deviceCategory(df))
-            df_out['geoNetwork.first_x_longitude'], df_out['geoNetwork.last_x_longitude'], df_out['geoNetwork.first_y_longitude'], df_out['geoNetwork.last_y_longitude'] = self._preprocess_longitudes_and_latitudes(df)
+            df_out['geoNetwork.first_x_longitude'], df_out['geoNetwork.last_x_longitude'], df_out['geoNetwork.first_y_latitude'], df_out['geoNetwork.last_y_latitude'], df_out['missing_longitude_latitude'] = self._preprocess_longitudes_and_latitudes(df)
             df_out = df_out.join(self._preprocess_country(df))
             df_out = df_out.join(self._preprocess_metro(df))
             dfs_out.append((df_out, df_labels))
@@ -137,10 +134,8 @@ class Dataset():
         return metro_dummies_df
 
     def _preprocess_longitudes_and_latitudes(self, df):
-        """Preprocesses the columns u'geoNetwork.latitude',
-           u'geoNetwork.longitude', and u'geoNetwork.metro' in the dataset train.csv.
+        """Preprocesses the columns u'geoNetwork.latitude', and u'geoNetwork.longitude' in the training dataframe.
            Creates columns of the first and last x and y longitudes and latitudes (4 columns) of each visitor.
-           Also creates dummy columns of the country and metropolitan area of each visit.
            
            Returns:
                The training dataframe (indexed by visitor) with the added longitude/latitude columns.
@@ -148,12 +143,17 @@ class Dataset():
         
         train_df = df.copy(deep=False)
         
-        # Preprocess the numeric columns. Group by visitor and standardize, impute missing values, and normalize
+        # Replace the strings in the longitude & latitude columns with NaN's.
+        train_df['geoNetwork.longitude'] = train_df['geoNetwork.longitude'].replace("not available in demo dataset", np.nan)
+        train_df['geoNetwork.latitude'] = train_df['geoNetwork.latitude'].replace("not available in demo dataset", np.nan)
         
-        # Impute the missing values in latitudes and longitudes.
-        imp = impute.SimpleImputer(missing_values='not available in demo dataset', strategy='mean')
-        train_df['imputed_latitude'] = imp.transform(train_df['geoNetwork.latitude'])
-        train_df['imputed_longitude'] = imp.transform(train_df['geoNetwork.longitude'])
+        # Create a binary column signifying where the missing longitudes/latitudes are.
+        train_df['missing_longitude_latitude'] = 0
+        train_df.loc[pd.isna(train_df['geoNetwork.longitude']), 'missing_longitude_latitude'] = 1
+        
+        # Convert the longitude & latitude columns from the object type to a numeric type.
+        train_df['geoNetwork.longitude'] = train_df['geoNetwork.longitude'].convert_objects(convert_numeric=True)
+        train_df['geoNetwork.latitude'] = train_df['geoNetwork.latitude'].convert_objects(convert_numeric=True)
         
         # Convert longitude and latitude into x and y coordinates.
         # First convert from degrees to radians, then take sin and cosine.
@@ -167,26 +167,19 @@ class Dataset():
         train_df['y_latitude'] = train_df['geoNetwork.latitude'] * (math.pi / 180)
         train_df['y_latitude'] = numpy.sin(train_df['y_latitude'])
         
+        # Impute the missing values for the specified columns.
+        train_df['x_longitude'] = train_df['x_longitude'].fillna(0)
+        train_df['y_longitude'] = train_df['y_longitude'].fillna(0)
+        train_df['x_latitude'] = train_df['x_latitude'].fillna(0)
+        train_df['y_latitude'] = train_df['y_latitude'].fillna(0)
+
         # Sort by date.
         train_df = train_df.sort_values(by = ['date'])
         
-        # Goup by Visitor ID.
+        # Group by Visitor ID.
         train_gdf = train_df.groupby('fullVisitorId')
         
-        # First, use the train_df data to convert long & lat from degrees to radians, then take sin and cosine.
-        # Then, group by fullVisitorID, and for each Visitor as a row, create a column with the Visitor's first
-        # and last x and y longitudes and latitudes.
-        
-        # The first Longitudes of each visitor are in train_gdf['x_longitude'].first()
-        # The last  Longitudes of each visitor are in train_gdf['x_longitude'].last()
-        # The first Latitudes of each visitor are in train_gdf['x_latitude'].first()
-        # The last  Latitudes of each visitor are in train_gdf['x_latitude'].last()
-        df['geoNetwork.first_x_longitude'] = train_gdf['x_longitude'].first()
-        df['geoNetwork.last_x_longitude'] = train_gdf['x_longitude'].last()
-        df['geoNetwork.first_y_longitude'] = train_gdf['y_latitude'].first()
-        df['geoNetwork.last_y_longitude'] = train_gdf['y_latitude'].last()
-        
-        return train_gdf['x_longitude'].first(), train_gdf['x_longitude'].last(), train_gdf['y_latitude'].first(), train_gdf['y_latitude'].last()
+        return train_gdf['x_longitude'].first(), train_gdf['x_longitude'].last(), train_gdf['y_latitude'].first(), train_gdf['y_latitude'].last(), train_gdf['missing_longitude_latitude']
         
     def _make_log_sum_revenue(self, df):
         """Create the log_sum_revenue column.
