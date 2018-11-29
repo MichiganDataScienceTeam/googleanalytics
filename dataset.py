@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import json
 import argparse
+import sklearn.preprocessing as preprocessing
+import math
 
 _DATA_DIR = './processed_data'
 _TRAIN = 'trainminusval_visits.csv'
@@ -158,14 +160,14 @@ class Dataset():
         # Convert longitude and latitude into x and y coordinates.
         # First convert from degrees to radians, then take sin and cosine.
         train_df['x_longitude'] = train_df['geoNetwork.longitude'] * (math.pi / 180)
-        train_df['x_longitude'] = numpy.cos(train_df['x_longitude'])
+        train_df['x_longitude'] = np.cos(train_df['x_longitude'])
         train_df['y_longitude'] = train_df['geoNetwork.longitude'] * (math.pi / 180)
-        train_df['y_longitude'] = numpy.sin(train_df['y_longitude'])
+        train_df['y_longitude'] = np.sin(train_df['y_longitude'])
         
         train_df['x_latitude'] = train_df['geoNetwork.latitude'] * (math.pi / 180)
-        train_df['x_latitude'] = numpy.cos(train_df['x_latitude'])
+        train_df['x_latitude'] = np.cos(train_df['x_latitude'])
         train_df['y_latitude'] = train_df['geoNetwork.latitude'] * (math.pi / 180)
-        train_df['y_latitude'] = numpy.sin(train_df['y_latitude'])
+        train_df['y_latitude'] = np.sin(train_df['y_latitude'])
         
         # Impute the missing values for the specified columns.
         train_df['x_longitude'] = train_df['x_longitude'].fillna(0)
