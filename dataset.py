@@ -5,7 +5,8 @@ import pandas as pd
 import numpy as np
 import json
 import argparse
-from sklearn import preprocessing
+import sklearn.preprocessing as preprocessing
+import math
 
 _DATA_DIR = './processed_data'
 _TRAIN = 'trainminusval_visits.csv'
@@ -17,7 +18,6 @@ _NUM_ROWS_TRAIN = 903653
 _NUM_ROWS_TEST = 804684
 
 _NUM_ROWS_DEBUG = 1000
-
 
 class Dataset():
     """The Google Analytics dataset."""
@@ -108,17 +108,92 @@ class Dataset():
         for df, df_labels in dfs:
             df_out = pd.DataFrame({'visitorId': df['fullVisitorId'].unique()})
             df_out.set_index('visitorId', inplace=True)
-
             # Preprocessing operations go here.
             df_out['log_sum_revenue'] = self._make_log_sum_revenue(df)
             df_out['encoding_medium'], df_out['encoding_referralPath'], df_out['encoding_source'] = self._make_traffic_source_preprocessing(df)
             df_out['encoding_campaign'], df_out['encoding_isTrueDirect'], df_out['encoding_keyword'] = self._another_traffic_source_preprocessing(df)
-            df_out = df_out.join(self._make_browser_preprocessing())
-            df_out = df_out.join(self._preprocess_deviceCategory())
+            df_out = df_out.join(self._make_browser_preprocessing(df))
+            df_out = df_out.join(self._preprocess_deviceCategory(df))
+            df_out = self._preprocess_longitudes_and_latitudes(df)
+            df_out = df_out.join(self._preprocess_country(df))
+            df_out = df_out.merge(self._preprocess_metro(df))
             dfs_out.append((df_out, df_labels))
 
         return dfs_out
 
+    def _preprocess_country(self, df):
+        # One-hot encode the countries.
+        new_country_col = pd.Series(df['geoNetwork.country'])
+        country_dummies_df = pd.get_dummies(new_country_col)
+
+        return country_dummies_df
+
+    def _preprocess_metro(self, df):
+        # One-hot encode the metropolitan areas.
+        new_metro_col = pd.Series(df['geoNetwork.metro'])
+        metro_dummies_df = pd.get_dummies(new_metro_col)
+        
+        return metro_dummies_df
+
+    def _preprocess_longitudes_and_latitudes(self, df):
+        
+        """Preprocesses the columns u'geoNetwork.latitude', and u'geoNetwork.longitude' in the training dataframe.
+           Creates columns of the first and last x and y longitudes and latitudes (4 columns) of each visitor.
+           
+           Returns:
+               The training dataframe (indexed by visitor) with the added longitude/latitude columns.
+        """
+        
+        train_df = df.copy(deep=False)
+        
+        # Replace the strings in the longitude & latitude columns with NaN's.
+        train_df['geoNetwork.longitude'] = train_df['geoNetwork.longitude'].replace("not available in demo dataset", np.nan)
+        train_df['geoNetwork.latitude'] = train_df['geoNetwork.latitude'].replace("not available in demo dataset", np.nan)
+        
+        # Create a binary column signifying where the missing longitudes/latitudes are.
+        train_df['missing_longitude_latitude'] = 0
+        train_df.loc[pd.isna(train_df['geoNetwork.longitude']), 'missing_longitude_latitude'] = 1
+        
+        # Convert the longitude & latitude columns from the object type to a numeric type.
+        train_df['geoNetwork.longitude'] = train_df['geoNetwork.longitude'].convert_objects(convert_numeric=True)
+        train_df['geoNetwork.latitude'] = train_df['geoNetwork.latitude'].convert_objects(convert_numeric=True)
+        
+        # Convert longitude and latitude into x and y coordinates.
+        # First convert from degrees to radians, then take sin and cosine.
+        train_df['x_longitude'] = train_df['geoNetwork.longitude'] * (math.pi / 180)
+        train_df['x_longitude'] = np.cos(train_df['x_longitude'])
+        train_df['y_longitude'] = train_df['geoNetwork.longitude'] * (math.pi / 180)
+        train_df['y_longitude'] = np.sin(train_df['y_longitude'])
+        
+        train_df['x_latitude'] = train_df['geoNetwork.latitude'] * (math.pi / 180)
+        train_df['x_latitude'] = np.cos(train_df['x_latitude'])
+        train_df['y_latitude'] = train_df['geoNetwork.latitude'] * (math.pi / 180)
+        train_df['y_latitude'] = np.sin(train_df['y_latitude'])
+        
+        # Impute the missing values for the specified columns.
+        train_df['x_longitude'] = train_df['x_longitude'].fillna(0)
+        train_df['y_longitude'] = train_df['y_longitude'].fillna(0)
+        train_df['x_latitude'] = train_df['x_latitude'].fillna(0)
+        train_df['y_latitude'] = train_df['y_latitude'].fillna(0)
+
+        # Sort by date.
+        train_df = train_df.sort_values(by = ['date'])
+        
+        # Group by Visitor ID.
+        train_gdf = train_df.groupby('fullVisitorId')
+     
+        train_df['geoNetwork.first_x_longitude'] = train_gdf['x_longitude'].first()
+        train_df['geoNetwork.last_x_longitude'] = train_gdf['x_longitude'].last()
+        train_df['geoNetwork.first_y_latitude'] = train_gdf['y_latitude'].first()
+        train_df['geoNetwork.last_y_latitude'] = train_gdf['y_latitude'].last()
+        train_df['geoNetwork.first_x_latitude'] = train_gdf['x_latitude'].first()
+        train_df['geoNetwork.last_x_latitude'] = train_gdf['x_latitude'].last()
+        train_df['geoNetwork.first_y_longitude'] = train_gdf['y_longitude'].first()
+        train_df['geoNetwork.last_y_longitude'] = train_gdf['y_longitude'].last()
+        train_df['missing_longitude_latitude'] = train_gdf['missing_longitude_latitude'].first()
+        
+        return train_df
+        
     def _make_log_sum_revenue(self, df):
         """Create the log_sum_revenue column.
 
@@ -185,7 +260,7 @@ class Dataset():
         train_gdf = train_df.groupby('fullVisitorId')
         return train_gdf['encoding_campaign'].sum(), train_gdf['encoding_isTrueDirect'].sum(), train_gdf['encoding_keyword'].sum()
 
-    def _make_browser_preprocessing(self):
+    def _make_browser_preprocessing(self, df):
         """Creates the encoding columns of device.browser, device.browserSize, device.browserVersion
 
         Returns:
@@ -193,7 +268,7 @@ class Dataset():
             device.browserSize, device.browserVersion
 
         """
-        train_df = self.train.copy(deep=False)
+        train_df = df.copy(deep=False)
         browser = self._one_hot('device.browser')
         browserSize = self._one_hot('device.browserSize')
         browserVersion = self._one_hot('device.browserVersion')
@@ -222,7 +297,7 @@ class Dataset():
         """Helper function to interpret columns in PANDAS."""
         return lambda x: {column_name: json.loads(x)}
 
-    def _preprocess_deviceCategory(self):
+    def _preprocess_deviceCategory(self, df):
         """ Creates one hot encoding columns for the device.deviceCategory
         args:
             self: the google analytics Dataset
@@ -233,7 +308,7 @@ class Dataset():
         """
 
         # Obtain list of device categories from training set
-        train_df = self.train.copy(deep = False).set_index('fullVisitorId')
+        train_df = df.copy(deep = False).set_index('fullVisitorId')
         deviceCategory = train_df['device.deviceCategory'].fillna('missing')
 
         # Create one hot encoding
@@ -261,5 +336,5 @@ if __name__ == '__main__':
     else:
         assert num_train == _NUM_ROWS_TRAIN, 'Incorrect number of training examples found.'
         assert num_test == _NUM_ROWS_TEST, 'Incorrect number of test examples found.'
-
+    
     print('Successfully loaded the dataset.')
