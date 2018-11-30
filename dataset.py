@@ -114,9 +114,9 @@ class Dataset():
             df_out['encoding_campaign'], df_out['encoding_isTrueDirect'], df_out['encoding_keyword'] = self._another_traffic_source_preprocessing(df)
             df_out = df_out.join(self._make_browser_preprocessing(df))
             df_out = df_out.join(self._preprocess_deviceCategory(df))
-            df_out['geoNetwork.first_x_longitude'], df_out['geoNetwork.last_x_longitude'], df_out['geoNetwork.first_y_latitude'], df_out['geoNetwork.last_y_latitude'], df_out['missing_longitude_latitude'] = self._preprocess_longitudes_and_latitudes(df)
+            df_out = self._preprocess_longitudes_and_latitudes(df)
             df_out = df_out.join(self._preprocess_country(df))
-            df_out = df_out.join(self._preprocess_metro(df))
+            df_out = df_out.merge(self._preprocess_metro(df))
             dfs_out.append((df_out, df_labels))
 
         return dfs_out
@@ -132,10 +132,11 @@ class Dataset():
         # One-hot encode the metropolitan areas.
         new_metro_col = pd.Series(df['geoNetwork.metro'])
         metro_dummies_df = pd.get_dummies(new_metro_col)
-
+        
         return metro_dummies_df
 
     def _preprocess_longitudes_and_latitudes(self, df):
+        
         """Preprocesses the columns u'geoNetwork.latitude', and u'geoNetwork.longitude' in the training dataframe.
            Creates columns of the first and last x and y longitudes and latitudes (4 columns) of each visitor.
            
@@ -180,8 +181,18 @@ class Dataset():
         
         # Group by Visitor ID.
         train_gdf = train_df.groupby('fullVisitorId')
+     
+        train_df['geoNetwork.first_x_longitude'] = train_gdf['x_longitude'].first()
+        train_df['geoNetwork.last_x_longitude'] = train_gdf['x_longitude'].last()
+        train_df['geoNetwork.first_y_latitude'] = train_gdf['y_latitude'].first()
+        train_df['geoNetwork.last_y_latitude'] = train_gdf['y_latitude'].last()
+        train_df['geoNetwork.first_x_latitude'] = train_gdf['x_latitude'].first()
+        train_df['geoNetwork.last_x_latitude'] = train_gdf['x_latitude'].last()
+        train_df['geoNetwork.first_y_longitude'] = train_gdf['y_longitude'].first()
+        train_df['geoNetwork.last_y_longitude'] = train_gdf['y_longitude'].last()
+        train_df['missing_longitude_latitude'] = train_gdf['missing_longitude_latitude'].first()
         
-        return train_gdf['x_longitude'].first(), train_gdf['x_longitude'].last(), train_gdf['y_latitude'].first(), train_gdf['y_latitude'].last(), train_gdf['missing_longitude_latitude']
+        return train_df
         
     def _make_log_sum_revenue(self, df):
         """Create the log_sum_revenue column.
